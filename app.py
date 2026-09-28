@@ -229,29 +229,29 @@ body { background:#05070b; display:flex; justify-content:center; align-items:cen
 canvas { display:block; image-rendering: pixelated; }
 #controls {
     position:absolute; bottom:8px; left:12px; right:12px;
-    display:flex; align-items:center; gap:22px;
+    display:flex; align-items:center; gap:16px;
     color:#c8d4e0; font-size:11px; pointer-events:none; z-index:20;
     padding:8px 14px; background:linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.4));
     border-radius:10px; border:1px solid rgba(0,212,168,0.25);
 }
-.key-group { display:flex; align-items:center; gap:8px; }
+.key-group { display:flex; align-items:center; gap:6px; }
 .key-block { display:flex; flex-direction:column; align-items:center; gap:2px; }
 .key-row { display:flex; gap:2px; }
 .key {
     display:inline-flex; align-items:center; justify-content:center;
-    min-width:22px; height:22px; padding:0 6px;
+    min-width:20px; height:20px; padding:0 5px;
     background:linear-gradient(180deg, #1a2430, #0a0f18);
-    border:1px solid #00d4a8; border-radius:5px;
-    color:#00ffc8; font-weight:800; font-size:11px;
-    box-shadow: 0 0 8px rgba(0,212,168,0.4);
+    border:1px solid #00d4a8; border-radius:4px;
+    color:#00ffc8; font-weight:800; font-size:10px;
+    box-shadow: 0 0 6px rgba(0,212,168,0.4);
 }
-.key.wide { padding: 0 18px; }
-.key-label { color:#7a8699; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; }
+.key.wide { padding: 0 12px; }
+.key-label { color:#7a8699; font-size:9px; letter-spacing:1px; text-transform:uppercase; font-weight:700; }
 .info { color:#00ffc8; font-weight:700; letter-spacing:1px; font-size:11px; }
-#bigAlert { position:absolute; top:40%; left:50%;
-    transform: translate(-50%,-50%); font-size:42px; font-weight:900;
+#bigAlert { position:absolute; top:35%; left:50%;
+    transform: translate(-50%,-50%); font-size:48px; font-weight:900;
     letter-spacing:6px; opacity:0; pointer-events:none; z-index:15;
-    transition:opacity 0.2s; text-shadow: 0 0 30px currentColor; }
+    transition:opacity 0.2s; text-shadow: 0 0 40px currentColor; }
 </style></head><body>
 <div id="wrap">
     <canvas id="game" width="1000" height="700"></canvas>
@@ -259,20 +259,14 @@ canvas { display:block; image-rendering: pixelated; }
         <div class="key-group">
             <div class="key-block">
                 <span class="key">W</span>
-                <div class="key-row">
-                    <span class="key">A</span><span class="key">S</span><span class="key">D</span>
-                </div>
+                <div class="key-row"><span class="key">A</span><span class="key">S</span><span class="key">D</span></div>
             </div>
             <span class="key-label">Mover</span>
         </div>
-        <div class="key-group">
-            <span class="key wide">ESPACIO</span>
-            <span class="key-label">Pase</span>
-        </div>
-        <div class="key-group">
-            <span class="key">Q</span>
-            <span class="key-label">Regate</span>
-        </div>
+        <div class="key-group"><span class="key wide">ESPACIO</span><span class="key-label">Pase</span></div>
+        <div class="key-group"><span class="key">E</span><span class="key-label">Tiro</span></div>
+        <div class="key-group"><span class="key">Q</span><span class="key-label">Regate</span></div>
+        <div class="key-group"><span class="key">TAB</span><span class="key-label">Cambiar</span></div>
         <div class="key-group" style="margin-left:auto;">
             <span class="info">__TJ__ vs __TR__</span>
         </div>
@@ -281,64 +275,45 @@ canvas { display:block; image-rendering: pixelated; }
 </div>
 <script>
 const CFG = __DATA__;
-
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // =====================================================
-// CÁMARA TIPO FIFA 96 - ROTADA 45° CON PERSPECTIVA
+// CÁMARA FIFA 96 (ROTADA 45° + PERSPECTIVA + ZOOM)
 // =====================================================
-// Campo lógico grande (2000x1200). La cámara rota 45° y ve una porción.
 const ISO = {
     fieldW: 2000, fieldH: 1200,
-    
-    // La cámara está centrada en (camX, camY) en coordenadas del campo
     camX: 1000, camY: 600,
     targetCamX: 1000, targetCamY: 600,
-    
-    // Factor de escala isométrico
-    scale: 0.95,
-    tiltY: 0.52,       // Compresión vertical (perspectiva)
-    rotation: 0.707,   // cos(45°) = sin(45°) = 0.707
-    
-    // Centro de pantalla
+    scale: 2.2,
+    tiltY: 0.52,
+    rotation: 0.707,
     centerScreenX: W/2,
-    centerScreenY: H/2 - 40,
+    centerScreenY: H/2 - 20,
 };
 
-// Convierte coords del campo (0..2000, 0..1200) a pantalla
-// Aplica rotación 45° + perspectiva vertical
 function toScreen(x, y) {
-    // Offset relativo a la cámara
     const dx = x - ISO.camX;
     const dy = y - ISO.camY;
-    
-    // Rotar 45° alrededor del centro de la cámara
     const rotX = (dx + dy) * ISO.rotation;
     const rotY = (-dx + dy) * ISO.rotation;
-    
-    // Aplicar escala isométrica
     const isoX = rotX * ISO.scale;
     const isoY = rotY * ISO.scale * ISO.tiltY;
-    
-    // Centrar en pantalla
-    const sx = ISO.centerScreenX + isoX;
-    const sy = ISO.centerScreenY + isoY;
-    
-    return { sx, sy };
+    return { sx: ISO.centerScreenX + isoX, sy: ISO.centerScreenY + isoY };
 }
 
 function updateCamera() {
-    // Cámara sigue al balón con suavizado
-    ISO.targetCamX = ball.x;
-    ISO.targetCamY = ball.y;
-    ISO.camX += (ISO.targetCamX - ISO.camX) * 0.08;
-    ISO.camY += (ISO.targetCamY - ISO.camY) * 0.08;
+    const leadX = ball.vx * 8;
+    const leadY = ball.vy * 5;
+    ISO.targetCamX = ball.x + leadX;
+    ISO.targetCamY = ball.y + leadY;
+    ISO.camX += (ISO.targetCamX - ISO.camX) * 0.05;
+    ISO.camY += (ISO.targetCamY - ISO.camY) * 0.05;
 }
 
 // =====================================================
-// COLORES (paleta FIFA 96 Mega Drive)
+// CÉSPED
 // =====================================================
 const CESPEDES = {
     "Clásico": { dark:"#3d8a2b", light:"#4a9e35", line:"#ffffff" },
@@ -348,475 +323,253 @@ const CESPEDES = {
 };
 
 // =====================================================
-// SPRITES DIRECCIONALES (jugador se ve según hacia dónde corre)
-// 4 direcciones: down (frente), up (espaldas), left, right
-// 24x32 píxeles cada uno
+// SPRITES 24x32 CON DIRECCIONES
 // =====================================================
 const SPRITES = {
-    // ============ MIRANDO ABAJO (frente) ============
     idle_down: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHssssssssHH......",
-        "......HssSSSSSSssH......",
-        "......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",
-        ".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......",
-        "........SSSSSSSS........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",
-        ".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHssssssssHH......",
+        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
+        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
+        ".......SSS/SS/SSS.......","........SSSSSSSS........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
+        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
+        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
+        ".....BBBB..BBBBBB.......","........................",
     ],
     run1_down: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHssssssssHH......",
-        "......HssSSSSSSssH......",
-        "......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",
-        ".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......",
-        "........SSSSSSSS........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPP......",
-        "....PPPPPP...PPPPP......",
-        "....PPPP......PPPP......",
-        "....BBB.......PPPP......",
-        "....BBB.......BBBB......",
-        "..............BBBB......",
-        "..............BBB.......",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHssssssssHH......",
+        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
+        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
+        ".......SSS/SS/SSS.......","........SSSSSSSS........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPP......",
+        "....PPPPPP...PPPPP......","....PPPP......PPPP......",
+        "....BBB.......PPPP......","....BBB.......BBBB......",
+        "..............BBBB......","..............BBB.......",
+        "........................","........................",
     ],
     run2_down: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHssssssssHH......",
-        "......HssSSSSSSssH......",
-        "......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",
-        ".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......",
-        "........SSSSSSSS........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        "......PPPPPPPPPPPPP.....",
-        "......PPPPP...PPPPPP....",
-        "......PPPP......PPPP....",
-        "......PPPP.......BBB....",
-        "......BBBB.......BBB....",
-        "......BBBB..............",
-        ".......BBB..............",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHssssssssHH......",
+        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
+        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
+        ".......SSS/SS/SSS.......","........SSSSSSSS........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....","......PPPPPPPPPPPPP.....",
+        "......PPPPP...PPPPPP....","......PPPP......PPPP....",
+        "......PPPP.......BBB....","......BBBB.......BBB....",
+        "......BBBB..............",".......BBB..............",
+        "........................","........................",
     ],
-    
-    // ============ MIRANDO ARRIBA (espaldas) ============
     idle_up: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......",
-        "........ssssssss........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",
-        ".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        ".......HHHHHHHHHH.......","........ssssssss........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
+        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
+        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
+        ".....BBBB..BBBBBB.......","........................",
     ],
     run1_up: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......",
-        "........ssssssss........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPP......",
-        "....PPPPPP...PPPPP......",
-        "....PPPP......PPPP......",
-        "....BBB.......PPPP......",
-        "....BBB.......BBBB......",
-        "..............BBBB......",
-        "..............BBB.......",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        ".......HHHHHHHHHH.......","........ssssssss........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPP......",
+        "....PPPPPP...PPPPP......","....PPPP......PPPP......",
+        "....BBB.......PPPP......","....BBB.......BBBB......",
+        "..............BBBB......","..............BBB.......",
+        "........................","........................",
     ],
     run2_up: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......",
-        "........ssssssss........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        "......PPPPPPPPPPPPP.....",
-        "......PPPPP...PPPPPP....",
-        "......PPPP......PPPP....",
-        "......PPPP.......BBB....",
-        "......BBBB.......BBB....",
-        "......BBBB..............",
-        ".......BBB..............",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
+        ".......HHHHHHHHHH.......","........ssssssss........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....","......PPPPPPPPPPPPP.....",
+        "......PPPPP...PPPPPP....","......PPPP......PPPP....",
+        "......PPPP.......BBB....","......BBBB.......BBB....",
+        "......BBBB..............",".......BBB..............",
+        "........................","........................",
     ],
-    
-    // ============ MIRANDO DERECHA (perfil) ============
     idle_right: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......",
-        "......HHsSSSSSsH........",
-        "......HHsS@SSSss........",
-        "......HHsSSSSSs.........",
-        ".......HSsssssS.........",
-        ".......SSS/SSS..........",
-        "........SSSSSS..........",
-        "........SSSSSS..........",
-        ".......JJJJJJJJ.........",
-        "......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......",
-        "....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......",
-        "...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....",
-        "....JJJJJJJJJJJJJJ......",
-        "....JJJJJJJJJJJJJJ......",
-        ".....JJJJJJJJJJJJ.......",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        ".....PPPP.PPPPPP........",
-        ".....PPPP.PPPPPP........",
-        ".....BBBB.BBBBBB........",
-        ".....BBBB.BBBBBB........",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
+        "......HHHssssssHH.......","......HHsSSSSSsH........",
+        "......HHsS@SSSss........","......HHsSSSSSs.........",
+        ".......HSsssssS.........",".......SSS/SSS..........",
+        "........SSSSSS..........","........SSSSSS..........",
+        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
+        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
+        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
+        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
+        "....JJJJJJJJJJJJJJ......",".....JJJJJJJJJJJJ.......",
+        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
+        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
+        ".....PPPP.PPPPPP........",".....PPPP.PPPPPP........",
+        ".....BBBB.BBBBBB........",".....BBBB.BBBBBB........",
+        "........................","........................",
     ],
     run1_right: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......",
-        "......HHsSSSSSsH........",
-        "......HHsS@SSSss........",
-        "......HHsSSSSSs.........",
-        ".......HSsssssS.........",
-        ".......SSS/SSS..........",
-        "........SSSSSS..........",
-        "........SSSSSS..........",
-        ".......JJJJJJJJ.........",
-        "......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......",
-        "....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......",
-        "...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....",
-        "....JJJJJJJJJJJJJJ......",
-        ".....JJJJJJJJJJJJ.......",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        "....PPPPPP..PPP.........",
-        "....PPPP.....PP.........",
-        "....BBB......PPP........",
-        "....BBB......BBBB.......",
-        ".............BBBB.......",
-        ".............BBB........",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
+        "......HHHssssssHH.......","......HHsSSSSSsH........",
+        "......HHsS@SSSss........","......HHsSSSSSs.........",
+        ".......HSsssssS.........",".......SSS/SSS..........",
+        "........SSSSSS..........","........SSSSSS..........",
+        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
+        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
+        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
+        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
+        ".....JJJJJJJJJJJJ.......",".....PPPPPPPPPPP........",
+        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
+        "....PPPPPP..PPP.........","....PPPP.....PP.........",
+        "....BBB......PPP........","....BBB......BBBB.......",
+        ".............BBBB.......",".............BBB........",
+        "........................","........................",
     ],
     run2_right: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......",
-        "......HHsSSSSSsH........",
-        "......HHsS@SSSss........",
-        "......HHsSSSSSs.........",
-        ".......HSsssssS.........",
-        ".......SSS/SSS..........",
-        "........SSSSSS..........",
-        "........SSSSSS..........",
-        ".......JJJJJJJJ.........",
-        "......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......",
-        "....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......",
-        "...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....",
-        "....JJJJJJJJJJJJJJ......",
-        ".....JJJJJJJJJJJJ.......",
-        ".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",
-        "......PPPPPPPPPP........",
-        "......PPPPP.PPPP........",
-        "......PPPP...PPP........",
-        "......PPPP...BBB........",
-        "......BBBB...BBB........",
-        "......BBBB..............",
-        ".......BBB..............",
-        "........................",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
+        "......HHHssssssHH.......","......HHsSSSSSsH........",
+        "......HHsS@SSSss........","......HHsSSSSSs.........",
+        ".......HSsssssS.........",".......SSS/SSS..........",
+        "........SSSSSS..........","........SSSSSS..........",
+        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
+        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
+        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
+        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
+        ".....JJJJJJJJJJJJ.......",".....PPPPPPPPPPP........",
+        ".....PPPPPPPPPPP........","......PPPPPPPPPP........",
+        "......PPPPP.PPPP........","......PPPP...PPP........",
+        "......PPPP...BBB........","......BBBB...BBB........",
+        "......BBBB..............",".......BBB..............",
+        "........................","........................",
     ],
-    
-    // ============ CHUTAR ============
     shoot: [
-        "........HHHHHHHH........",
-        ".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......",
-        "......HHssssssssHH......",
-        "......HssSSSSSSssH......",
-        "......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",
-        ".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......",
-        "........SSSSSSSS........",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",
-        ".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......",
-        "........................",
+        "........HHHHHHHH........",".......HHHHHHHHHH.......",
+        "......HHHHHHHHHHHH......","......HHssssssssHH......",
+        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
+        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
+        ".......SSS/SS/SSS.......","........SSSSSSSS........",
+        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
+        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
+        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
+        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
+        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
+        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
+        ".....BBBB..BBBBBB.......","........................",
     ],
-    
-    // ============ CELEBRAR ============
     celebrate: [
-        "..SS....HHHHHHHH....SS..",
-        "..SS...HHHHHHHHHH...SS..",
-        "..SS...HHHHHHHHHH...SS..",
-        "..SS...HHssssssssH..SS..",
-        "..SS...HssSSSSSSssH.SS..",
-        "..SS...HsS@SSSS@SsH.SS..",
-        "..SS...HsSSSSSSSSsH.SS..",
-        "..SS....SSSSSSSSSS..SS..",
-        "..SS....SSS/SS/SSS..SS..",
-        "...S....SSSSSSSS....S...",
-        "........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",
-        ".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",
-        ".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......",
-        "........................",
+        "..SS....HHHHHHHH....SS..","..SS...HHHHHHHHHH...SS..",
+        "..SS...HHHHHHHHHH...SS..","..SS...HHHHHHHHHH...SS..",
+        "..SS...HHssssssssHH.SS..","..SS...HssSSSSSSssH.SS..",
+        "..SS...HsS@SSSS@SsH.SS..","..SS...HsSSSSSSSSsH.SS..",
+        "..SS....SSSSSSSSSS..SS..","..SS....SSS/SS/SSS..SS..",
+        "...S....SSSSSSSS....S...","........SSSSSSSS........",
+        ".......JJJJJJJJJJ.......","......JJccJJJJccJJ......",
+        ".....JJJJcNNNNcJJJJ.....",".....JJJJcNNNNcJJJJ.....",
+        "....JJJJJcNNNNcJJJJJ....","....JJJJJcNNNNcJJJJJ....",
+        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
+        "...KJJJJJJJJJJJJJJJJK...","....JJJJJJJJJJJJJJJJ....",
+        "....JJJJJJJJJJJJJJJJ....",".....JJJJJJJJJJJJJJ.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
+        ".....PPPP..PPPPPP.......",".....PPPP..PPPPPP.......",
+        ".....BBBB..BBBBBB.......",".....BBBB..BBBBBB.......",
     ],
-    
-    // ============ TACKLE (barrida) ============
     tackle: [
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "................HHHHHHHH",
-        "...............HHHHHHHHH",
-        "..............HHHHHHHHHH",
-        "..............HHsssssssH",
-        "..............HssSSSSssH",
-        "..............HsS@SS@SsH",
-        "...............SSSSSSSS.",
-        "...............SSS/SS/SS",
-        "................SSSSSSSS",
-        "................SSSSSSSS",
-        "......JJJJJJJJJJJJJJJJJ.",
-        ".....JJJJccJJJJccJJJJJJ.",
-        "....JJJJcNNNNNNNNcJJJJJ.",
-        "...JJJJJcNNNNNNNNcJJJJJ.",
-        "..JJJJJJcNNNNNNNNcJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.",
-        "...JJJJJJJJJJJJJJJJJJJJ.",
-        "....JJJJJJJJJJJJJJJJJJ..",
-        "....PPPPPPPPPPPPPPPPP...",
-        "...PPPPPPPPPPPPPPPPPPP..",
-        "..PPPPPPPPPPPPPPPPPPP...",
-        ".BBBB...............BBB.",
-        ".BBBB...............BBB.",
-        "........................",
+        "........................","........................",
+        "........................","........................",
+        "........................","........................",
+        "................HHHHHHHH","...............HHHHHHHHH",
+        "..............HHHHHHHHHH","..............HHsssssssH",
+        "..............HssSSSSssH","..............HsS@SS@SsH",
+        "...............SSSSSSSS.","...............SSS/SS/SS",
+        "................SSSSSSSS","................SSSSSSSS",
+        "......JJJJJJJJJJJJJJJJJ.",".....JJJJccJJJJccJJJJJJ.",
+        "....JJJJcNNNNNNNNcJJJJJ.","...JJJJJcNNNNNNNNcJJJJJ.",
+        "..JJJJJJcNNNNNNNNcJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
+        "..KJJJJJJJJJJJJJJJJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
+        "...JJJJJJJJJJJJJJJJJJJJ.","....JJJJJJJJJJJJJJJJJJ..",
+        "....PPPPPPPPPPPPPPPPP...","...PPPPPPPPPPPPPPPPPPP..",
+        "..PPPPPPPPPPPPPPPPPPP...",".BBBB...............BBB.",
+        ".BBBB...............BBB.","........................",
     ],
-    
-    // ============ CAÍDO ============
     fallen: [
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "........................",
-        "................HHHHHHHH",
-        "...............HHHHHHHHH",
-        "..............HHHHHHHHHH",
-        "..............HHsssssssH",
-        "..............HssSSSSssH",
-        "..............HsS@SS@SsH",
-        "...............SSSSSSSS.",
-        "...............SSS/SS/SS",
-        "................SSSSSSSS",
-        "......JJJJJJJJJJJJJJJJJ.",
-        ".....JJJJccJJJJccJJJJJJ.",
-        "....JJJJcNNNNNNNNcJJJJJ.",
-        "...JJJJJcNNNNNNNNcJJJJJ.",
-        "..JJJJJJcNNNNNNNNcJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.",
-        "...JJJJJJJJJJJJJJJJJJJJ.",
-        "....JJJJJJJJJJJJJJJJJJ..",
-        "....PPPPPPPPPPPPPPPPP...",
-        "...PPPPPPPPPPPPPPPPPPP..",
-        ".BBBB...............BBB.",
-        ".BBBB...............BBB.",
-        "........................",
-        "........................",
+        "........................","........................",
+        "........................","........................",
+        "........................","........................",
+        "........................","................HHHHHHHH",
+        "...............HHHHHHHHH","..............HHHHHHHHHH",
+        "..............HHsssssssH","..............HssSSSSssH",
+        "..............HsS@SS@SsH","...............SSSSSSSS.",
+        "...............SSS/SS/SS","................SSSSSSSS",
+        "......JJJJJJJJJJJJJJJJJ.",".....JJJJccJJJJccJJJJJJ.",
+        "....JJJJcNNNNNNNNcJJJJJ.","...JJJJJcNNNNNNNNcJJJJJ.",
+        "..JJJJJJcNNNNNNNNcJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
+        "..KJJJJJJJJJJJJJJJJJJJJ.","...JJJJJJJJJJJJJJJJJJJJ.",
+        "....JJJJJJJJJJJJJJJJJJ..","....PPPPPPPPPPPPPPPPP...",
+        "...PPPPPPPPPPPPPPPPPPP..",".BBBB...............BBB.",
+        ".BBBB...............BBB.","........................",
+        "........................","........................",
         "........................",
     ],
 };
 
-function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isControlled) {
+function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isControlled, flipX) {
     const h = sprite.length;
     const w = sprite[0].length;
     const offsetX = -w * pixelSize / 2;
     const offsetY = -h * pixelSize;
     
-    // Sombra elíptica realista (como FIFA 96)
+    // Sombra elíptica
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath();
     ctx.ellipse(x, y + 4, w * pixelSize * 0.45, h * pixelSize * 0.10, 0, 0, Math.PI * 2);
@@ -824,7 +577,8 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
     
     for (let row = 0; row < h; row++) {
         for (let col = 0; col < w; col++) {
-            const ch = sprite[row][col];
+            const srcCol = flipX ? (w - 1 - col) : col;
+            const ch = sprite[row][srcCol];
             if (ch === '.') continue;
             const px = x + offsetX + col * pixelSize;
             const py = y + offsetY + row * pixelSize;
@@ -850,7 +604,7 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
     }
     
     // Dorsal
-    ctx.font = `bold ${Math.round(pixelSize * 4.5)}px Courier New`;
+    ctx.font = `bold ${Math.round(pixelSize * 4)}px Courier New`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.strokeStyle = 'rgba(0,0,0,0.9)';
     ctx.lineWidth = 3;
@@ -859,7 +613,22 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
     ctx.strokeText(dorsal, x, dorsalY);
     ctx.fillText(dorsal, x, dorsalY);
     
+    // Flecha indicadora del jugador controlado
     if (isControlled) {
+        const arrowY = y - h * pixelSize - 18;
+        const bounce = Math.sin(animTimer * 0.15) * 3;
+        ctx.fillStyle = '#00ffc8';
+        ctx.beginPath();
+        ctx.moveTo(x - 8, arrowY + bounce);
+        ctx.lineTo(x + 8, arrowY + bounce);
+        ctx.lineTo(x, arrowY + 12 + bounce);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        // Anillo bajo los pies
         ctx.strokeStyle = '#00ffc8';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -879,13 +648,11 @@ function drawBall(ball, radius) {
     const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
     ballRotation += speed * 0.03;
     
-    // Sombra
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
     ctx.ellipse(x + 2, y + 5, r * 1.2, r * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
     
-    // Balón
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -897,7 +664,7 @@ function drawBall(ball, radius) {
         const a = (i / 5) * Math.PI * 2 - Math.PI / 2 + ballRotation;
         drawPolygon(x + Math.cos(a) * r * 0.7, y + Math.sin(a) * r * 0.7, 5, r * 0.3, a);
     }
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)'; 
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
 }
@@ -912,46 +679,62 @@ function drawPolygon(cx, cy, sides, radius, rotation) {
 }
 
 // =====================================================
-// CAMPO CON CÉSPED TIPO FIFA 96
+// RED ANIMADA
+// =====================================================
+let netLeftOffset = 0, netLeftVelocity = 0;
+let netRightOffset = 0, netRightVelocity = 0;
+
+function kickNet(side, force) {
+    if (side === 'left') netLeftVelocity = 0.9 * force;
+    else netRightVelocity = 0.9 * force;
+}
+function updateNets() {
+    netLeftVelocity += -netLeftOffset * 0.15;
+    netLeftVelocity *= 0.9;
+    netLeftOffset += netLeftVelocity;
+    netRightVelocity += -netRightOffset * 0.15;
+    netRightVelocity *= 0.9;
+    netRightOffset += netRightVelocity;
+}
+
+// =====================================================
+// CAMPO
 // =====================================================
 function drawField() {
     const c = CESPEDES[CFG.cesped];
+    const tl = toScreen(0, 0), tr = toScreen(ISO.fieldW, 0);
+    const br = toScreen(ISO.fieldW, ISO.fieldH), bl = toScreen(0, ISO.fieldH);
     
-    // Convertir esquinas del campo
-    const tl = toScreen(0, 0);
-    const tr = toScreen(ISO.fieldW, 0);
-    const br = toScreen(ISO.fieldW, ISO.fieldH);
-    const bl = toScreen(0, ISO.fieldH);
-    
-    // Dibujar césped base
     ctx.fillStyle = c.dark;
     ctx.beginPath();
-    ctx.moveTo(tl.sx, tl.sy);
-    ctx.lineTo(tr.sx, tr.sy);
-    ctx.lineTo(br.sx, br.sy);
-    ctx.lineTo(bl.sx, bl.sy);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
+    ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy);
+    ctx.closePath(); ctx.fill();
     
-    // Franjas de césped (12 franjas verticales del campo real)
+    // Franjas
     const stripes = 12;
     for (let i = 0; i < stripes; i += 2) {
         const x1 = (i / stripes) * ISO.fieldW;
         const x2 = ((i + 1) / stripes) * ISO.fieldW;
-        const p1 = toScreen(x1, 0);
-        const p2 = toScreen(x2, 0);
-        const p3 = toScreen(x2, ISO.fieldH);
-        const p4 = toScreen(x1, ISO.fieldH);
-        
+        const p1 = toScreen(x1, 0), p2 = toScreen(x2, 0);
+        const p3 = toScreen(x2, ISO.fieldH), p4 = toScreen(x1, ISO.fieldH);
         ctx.fillStyle = c.light;
         ctx.beginPath();
-        ctx.moveTo(p1.sx, p1.sy);
-        ctx.lineTo(p2.sx, p2.sy);
-        ctx.lineTo(p3.sx, p3.sy);
-        ctx.lineTo(p4.sx, p4.sy);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy);
+        ctx.lineTo(p3.sx, p3.sy); ctx.lineTo(p4.sx, p4.sy);
+        ctx.closePath(); ctx.fill();
     }
+    
+    // Rayas diagonales
+    ctx.globalAlpha = 0.06;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 25;
+    for (let i = -20; i < 60; i++) {
+        const x1 = i * 80, x2 = x1 + 500;
+        const p1 = toScreen(x1, 0), p2 = toScreen(x2, ISO.fieldH);
+        ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     
     // Líneas del campo
     const drawLine = (x1, y1, x2, y2) => {
@@ -974,170 +757,145 @@ function drawField() {
     
     ctx.strokeStyle = c.line;
     ctx.lineWidth = 2;
-    
-    // Borde del campo
     drawRect(0, 0, ISO.fieldW, ISO.fieldH);
-    // Línea media
     drawLine(ISO.centerX, 0, ISO.centerX, ISO.fieldH);
-    // Círculo central
     drawCircle(ISO.centerX, ISO.centerY, 100);
-    // Áreas grandes
     drawRect(0, ISO.centerY - 200, 160, 400);
     drawRect(ISO.fieldW - 160, ISO.centerY - 200, 160, 400);
-    // Áreas pequeñas
     drawRect(0, ISO.centerY - 90, 60, 180);
     drawRect(ISO.fieldW - 60, ISO.centerY - 90, 60, 180);
-    // Puntos penalti
-    const pen1 = toScreen(120, ISO.centerY);
-    const pen2 = toScreen(ISO.fieldW - 120, ISO.centerY);
+    const pen1 = toScreen(120, ISO.centerY), pen2 = toScreen(ISO.fieldW - 120, ISO.centerY);
     ctx.fillStyle = c.line;
     ctx.beginPath(); ctx.arc(pen1.sx, pen1.sy, 3, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(pen2.sx, pen2.sy, 3, 0, Math.PI*2); ctx.fill();
     
     // Porterías
-    const GOAL_H = 100;
-    const GOAL_DEPTH = 45;
+    const GOAL_H = 100, GOAL_DEPTH = 45;
     
-    // Portería izquierda
-    const gTL = toScreen(-GOAL_DEPTH, ISO.centerY - GOAL_H);
-    const gBL = toScreen(-GOAL_DEPTH, ISO.centerY + GOAL_H);
+    // IZQUIERDA
+    const gTL = toScreen(-GOAL_DEPTH - netLeftOffset * 30, ISO.centerY - GOAL_H);
+    const gBL = toScreen(-GOAL_DEPTH - netLeftOffset * 30, ISO.centerY + GOAL_H);
     const gFR = toScreen(0, ISO.centerY - GOAL_H);
     const gFR2 = toScreen(0, ISO.centerY + GOAL_H);
     
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
-    ctx.moveTo(gTL.sx, gTL.sy);
-    ctx.lineTo(gFR.sx, gFR.sy);
-    ctx.lineTo(gFR2.sx, gFR2.sy);
-    ctx.lineTo(gBL.sx, gBL.sy);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(gFR.sx, gFR.sy); ctx.lineTo(gFR2.sx, gFR2.sy);
+    ctx.lineTo(gBL.sx, gBL.sy); ctx.lineTo(gTL.sx, gTL.sy);
+    ctx.closePath(); ctx.fill();
     
-    // Red
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
         const t = i / 8;
-        const x1 = gTL.sx + (gFR.sx - gTL.sx) * t;
-        const y1 = gTL.sy + (gFR.sy - gTL.sy) * t;
-        const x2 = gBL.sx + (gFR2.sx - gBL.sx) * t;
-        const y2 = gBL.sy + (gFR2.sy - gBL.sy) * t;
+        const x1 = gFR.sx + (gFR2.sx - gFR.sx) * t;
+        const y1 = gFR.sy + (gFR2.sy - gFR.sy) * t;
+        const x2 = gTL.sx + (gBL.sx - gTL.sx) * t;
+        const y2 = gTL.sy + (gBL.sy - gTL.sy) * t;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    for (let i = 0; i <= 10; i++) {
+        const t = i / 10;
+        const x1 = gFR.sx + (gTL.sx - gFR.sx) * t;
+        const y1 = gFR.sy + (gTL.sy - gFR.sy) * t;
+        const x2 = gFR2.sx + (gBL.sx - gFR2.sx) * t;
+        const y2 = gFR2.sy + (gBL.sy - gFR2.sy) * t;
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
     
-    // Postes
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(gTL.sx, gTL.sy); ctx.lineTo(gFR.sx, gFR.sy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(gBL.sx, gBL.sy); ctx.lineTo(gFR2.sx, gFR2.sy); ctx.stroke();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(gFR.sx, gFR.sy); ctx.lineTo(gTL.sx, gTL.sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gFR2.sx, gFR2.sy); ctx.lineTo(gBL.sx, gBL.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gTL.sx, gTL.sy); ctx.lineTo(gBL.sx, gBL.sy); ctx.stroke();
+    ctx.lineCap = 'butt';
     
-    // Portería derecha
-    const gTR = toScreen(ISO.fieldW + GOAL_DEPTH, ISO.centerY - GOAL_H);
-    const gBR = toScreen(ISO.fieldW + GOAL_DEPTH, ISO.centerY + GOAL_H);
+    // DERECHA
+    const gTR = toScreen(ISO.fieldW + GOAL_DEPTH + netRightOffset * 30, ISO.centerY - GOAL_H);
+    const gBR = toScreen(ISO.fieldW + GOAL_DEPTH + netRightOffset * 30, ISO.centerY + GOAL_H);
     const gFL = toScreen(ISO.fieldW, ISO.centerY - GOAL_H);
     const gFL2 = toScreen(ISO.fieldW, ISO.centerY + GOAL_H);
     
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
-    ctx.moveTo(gTR.sx, gTR.sy);
-    ctx.lineTo(gFL.sx, gFL.sy);
-    ctx.lineTo(gFL2.sx, gFL2.sy);
-    ctx.lineTo(gBR.sx, gBR.sy);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(gFL.sx, gFL.sy); ctx.lineTo(gFL2.sx, gFL2.sy);
+    ctx.lineTo(gBR.sx, gBR.sy); ctx.lineTo(gTR.sx, gTR.sy);
+    ctx.closePath(); ctx.fill();
     
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
         const t = i / 8;
-        const x1 = gTR.sx + (gFL.sx - gTR.sx) * t;
-        const y1 = gTR.sy + (gFL.sy - gTR.sy) * t;
-        const x2 = gBR.sx + (gFL2.sx - gBR.sx) * t;
-        const y2 = gBR.sy + (gFL2.sy - gBR.sy) * t;
+        const x1 = gFL.sx + (gFL2.sx - gFL.sx) * t;
+        const y1 = gFL.sy + (gFL2.sy - gFL.sy) * t;
+        const x2 = gTR.sx + (gBR.sx - gTR.sx) * t;
+        const y2 = gTR.sy + (gBR.sy - gTR.sy) * t;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    for (let i = 0; i <= 10; i++) {
+        const t = i / 10;
+        const x1 = gFL.sx + (gTR.sx - gFL.sx) * t;
+        const y1 = gFL.sy + (gTR.sy - gFL.sy) * t;
+        const x2 = gFL2.sx + (gBR.sx - gFL2.sx) * t;
+        const y2 = gFL2.sy + (gBR.sy - gFL2.sy) * t;
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
     
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(gTR.sx, gTR.sy); ctx.lineTo(gFL.sx, gFL.sy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(gBR.sx, gBR.sy); ctx.lineTo(gFL2.sx, gFL2.sy); ctx.stroke();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(gFL.sx, gFL.sy); ctx.lineTo(gTR.sx, gTR.sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gFL2.sx, gFL2.sy); ctx.lineTo(gBR.sx, gBR.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gTR.sx, gTR.sy); ctx.lineTo(gBR.sx, gBR.sy); ctx.stroke();
+    ctx.lineCap = 'butt';
 }
 
 // =====================================================
-// PÚBLICO (banda superior)
+// PÚBLICO
 // =====================================================
 function drawCrowd() {
-    // Banda arriba
-    const grad = ctx.createLinearGradient(0, 0, 0, 100);
-    grad.addColorStop(0, '#1a1a2a');
-    grad.addColorStop(1, '#2a2a3a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, 100);
+    const gradFull = ctx.createLinearGradient(0, 0, 0, H);
+    gradFull.addColorStop(0, '#1a3a1a'); gradFull.addColorStop(0.15, '#0d1f0d');
+    gradFull.addColorStop(0.85, '#0d1f0d'); gradFull.addColorStop(1, '#1a3a1a');
+    ctx.fillStyle = gradFull;
+    ctx.fillRect(0, 0, W, H);
     
-    // Puntitos de público
     const colores = ['#e8b890', '#c84040', '#4060c8', '#f0d040', '#40a040', '#e060a0'];
-    for (let y = 6; y < 95; y += 7) {
-        for (let x = 4; x < W - 4; x += 7) {
-            const idx = Math.floor((x * 7 + y * 13) % colores.length);
-            // Cuerpo
+    for (let y = 4; y < 95; y += 6) {
+        for (let x = 2; x < W - 2; x += 6) {
+            const idx = Math.floor((x * 7 + y * 13) % 6);
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(x, y + 3, 4, 4);
-            // Cabeza
+            ctx.fillRect(x, y + 2, 4, 4);
             ctx.fillStyle = '#e8b890';
-            ctx.fillRect(x + 1, y, 2, 3);
+            ctx.fillRect(x + 1, y, 2, 2);
         }
     }
-    
-    // Línea de publicidad
     ctx.fillStyle = '#0a0e14';
-    ctx.fillRect(0, 95, W, 12);
+    ctx.fillRect(0, 95, W, 14);
     ctx.fillStyle = '#00d4a8';
-    ctx.font = 'bold 9px Courier New';
+    ctx.font = 'bold 10px Courier New';
     ctx.textAlign = 'center';
     for (let i = 0; i < 8; i++) {
-        ctx.fillText('RETRO FOOTBALL 96', W/2 + (i - 3.5) * 140, 104);
+        ctx.fillText('· RETRO FOOTBALL 96 ·', W/2 + (i - 3.5) * 140, 105);
     }
     ctx.textAlign = 'left';
 }
 
 // =====================================================
-// HUD TIPO FIFA 96 (esquina superior izquierda minimalista)
+// MARCADOR
 // =====================================================
 function drawScoreboard(score, time) {
     const x = 20, y = 20;
-    
-    // Panel oscuro
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
     ctx.fillRect(x, y, 200, 60);
-    
-    // Borde fino
-    ctx.strokeStyle = '#00ff88';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, 200, 60);
-    
-    // Tiempo
     const mm = Math.floor(time / 60);
     const ss = Math.floor(time % 60).toString().padStart(2, '0');
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Courier New';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px Courier New';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.fillText(`${mm}:${ss}`, x + 12, y + 30);
-    
-    // Marcador
-    ctx.fillStyle = '#ffdd00';
-    ctx.font = 'bold 30px Courier New';
+    ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 30px Courier New';
     ctx.textAlign = 'right';
     ctx.fillText(`${score.you}-${score.rival}`, x + 190, y + 30);
-    
-    // Barra verde debajo
     ctx.fillStyle = '#00ff88';
     ctx.fillRect(x, y + 55, 200, 5);
-    
-    ctx.textAlign = 'left'; 
-    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 
 // =====================================================
@@ -1197,6 +955,10 @@ let animTimer = 0;
 let gameState = "play";
 let freezeTimer = 0;
 let lastBallToucher = null;
+let controlledIndex = 0;
+const cards = {};
+const particles = [];
+const skillParticles = [];
 
 const you = { players: [] };
 const rival = { players: [] };
@@ -1208,8 +970,7 @@ CFG.formJug.forEach(([fx, fy], i) => {
         num: dd.num || i+1, name: dd.nombre || 'Jugador',
         vel: dd.vel || 75, tir: dd.tir || 75, def: dd.def || 75,
         pas: dd.pas || 75, reg: dd.reg || 75,
-        isControlled: i === 0, side: 'you', 
-        facing: 'down',  // dirección: down/up/left/right
+        isControlled: i === 0, side: 'you', facing: 'down',
         state: 'idle', stateTimer: 0,
         homeX: fx * FIELD.w, homeY: fy * FIELD.h,
     });
@@ -1221,8 +982,7 @@ CFG.formRiv.forEach(([fx, fy], i) => {
         num: dd.num || i+1, name: dd.nombre || 'Rival',
         vel: dd.vel || 75, tir: dd.tir || 75, def: dd.def || 75,
         pas: dd.pas || 75, reg: dd.reg || 75,
-        isControlled: false, side: 'rival',
-        facing: 'up',
+        isControlled: false, side: 'rival', facing: 'up',
         state: 'idle', stateTimer: 0,
         homeX: FIELD.w - fx * FIELD.w, homeY: fy * FIELD.h,
     });
@@ -1230,24 +990,29 @@ CFG.formRiv.forEach(([fx, fy], i) => {
 
 const ball = { x: FIELD.w/2, y: FIELD.h/2, vx: 0, vy: 0 };
 
-// Input de teclado robusto
+// =====================================================
+// INPUT (con cambio de jugador)
+// =====================================================
 const KEYMAP = {
     'w': 'up', 'arrowup': 'up',
     's': 'down', 'arrowdown': 'down',
     'a': 'left', 'arrowleft': 'left',
     'd': 'right', 'arrowright': 'right',
     ' ': 'action', 'q': 'dribble',
+    'e': 'shoot',
+    'tab': 'switch', 'c': 'switch',
 };
+
 function handleKey(e, isDown) {
     const raw = e.key.toLowerCase();
     const action = KEYMAP[raw];
     if (!action) return;
     keys[action] = isDown;
-    if (raw.startsWith('arrow') || raw === ' ') e.preventDefault();
-    if (isDown && action === 'dribble' && dribbleCooldown <= 0 && gameState === "play") {
-        attemptDribble();
-    }
+    if (raw.startsWith('arrow') || raw === ' ' || raw === 'tab') e.preventDefault();
+    if (isDown && action === 'switch' && gameState === "play") switchToNextPlayer();
+    if (isDown && action === 'dribble' && dribbleCooldown <= 0 && gameState === "play") attemptDribble();
 }
+
 window.addEventListener('keydown', e => handleKey(e, true), true);
 window.addEventListener('keyup', e => handleKey(e, false), true);
 document.addEventListener('keydown', e => handleKey(e, true), true);
@@ -1257,6 +1022,36 @@ canvas.addEventListener('click', () => canvas.focus());
 window.addEventListener('click', () => canvas.focus());
 canvas.focus();
 setTimeout(() => canvas.focus(), 500);
+
+// =====================================================
+// CAMBIO DE JUGADOR
+// =====================================================
+function setControlledIndex(newIndex) {
+    you.players.forEach((p, i) => { p.isControlled = (i === newIndex); });
+    controlledIndex = newIndex;
+}
+function switchToNextPlayer() {
+    for (let i = 1; i <= you.players.length; i++) {
+        const next = (controlledIndex + i) % you.players.length;
+        if (next === 0) continue;
+        const p = you.players[next];
+        if (p.x < 0) continue;
+        if (p.state === 'fallen') continue;
+        setControlledIndex(next);
+        return;
+    }
+}
+function autoSwitchToNearestToBall() {
+    let best = controlledIndex, bestDist = Infinity;
+    for (let i = 1; i < you.players.length; i++) {
+        const p = you.players[i];
+        if (p.x < 0) continue;
+        if (p.state === 'fallen' || p.state === 'tackle') continue;
+        const d = dist(p, ball);
+        if (d < bestDist) { bestDist = d; best = i; }
+    }
+    if (best !== controlledIndex) setControlledIndex(best);
+}
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function clampToField(o, r) {
@@ -1268,15 +1063,18 @@ function updatePlayer(p, dx, dy, baseSpeed) {
     const boost = 0.7 + (p.vel / 100) * 0.6;
     const speed = baseSpeed * boost;
     const len = Math.hypot(dx, dy);
+    
     if (len > 0) {
-        p.vx = (dx / len) * speed; p.vy = (dy / len) * speed;
-        // Actualizar dirección visual
-        if (Math.abs(dx) > Math.abs(dy)) {
-            p.facing = dx > 0 ? 'right' : 'left';
-        } else {
-            p.facing = dy > 0 ? 'down' : 'up';
-        }
-    } else { p.vx *= 0.85; p.vy *= 0.85; }
+        const tvx = (dx / len) * speed;
+        const tvy = (dy / len) * speed;
+        p.vx += (tvx - p.vx) * 0.25;
+        p.vy += (tvy - p.vy) * 0.25;
+        if (Math.abs(dx) > Math.abs(dy) * 1.3) p.facing = dx > 0 ? 'right' : 'left';
+        else if (Math.abs(dy) > Math.abs(dx) * 1.3) p.facing = dy > 0 ? 'down' : 'up';
+        else p.facing = dx > 0 ? 'right' : 'left';
+    } else {
+        p.vx *= 0.88; p.vy *= 0.88;
+    }
     p.x += p.vx; p.y += p.vy;
     clampToField(p, PR);
 }
@@ -1287,6 +1085,102 @@ function showBigAlert(text, color) {
     setTimeout(() => a.style.opacity = '0', 1200);
 }
 
+// =====================================================
+// REGATES (6 tipos)
+// =====================================================
+function attemptDribble() {
+    const p = you.players[controlledIndex];
+    if (!p) return;
+    dribbleCooldown = 60;
+    let nearest = null, nd = 999;
+    for (const r of rival.players) {
+        if (r.x < 0) continue;
+        const d = dist(p, r);
+        if (d < nd) { nd = d; nearest = r; }
+    }
+    if (!nearest || nd > 80) {
+        p.vx *= 1.6; p.vy *= 1.6;
+        showBigAlert("💨 SPRINT", "#00ffc8");
+        return;
+    }
+    const inBox = p.x > FIELD.w - 250 || p.x < 250;
+    const isGood = p.reg >= 80;
+    const isElite = p.reg >= 88;
+    let skillOptions = ['bicicleta'];
+    if (isGood) { skillOptions.push('ruleta'); skillOptions.push('sombrero'); }
+    if (isElite) skillOptions.push('cano');
+    if (isElite && inBox) skillOptions.push('rabona');
+    if (isElite) skillOptions.push('elastica');
+    const skill = skillOptions[Math.floor(Math.random() * skillOptions.length)];
+    const baseProb = 0.5 + (p.reg - nearest.def) / 150 + (p.vel - nearest.vel) / 250;
+    const skillBonus = { 'bicicleta': 0, 'ruleta': -0.05, 'sombrero': -0.1, 'cano': -0.15, 'rabona': -0.2, 'elastica': -0.15 };
+    let prob = baseProb + (skillBonus[skill] || 0);
+    prob = Math.max(0.15, Math.min(0.92, prob));
+    const success = Math.random() < prob;
+    executeSkill(p, nearest, skill, success);
+}
+
+function executeSkill(p, defender, skill, success) {
+    const angle = Math.atan2(ball.y - p.y, ball.x - p.x);
+    let exitAngle = angle;
+    if (skill === 'ruleta') exitAngle = angle + (Math.random() < 0.5 ? Math.PI/2 : -Math.PI/2);
+    else if (skill === 'elastica') exitAngle = angle + (Math.random() < 0.5 ? Math.PI*0.75 : -Math.PI*0.75);
+    else if (skill === 'bicicleta') exitAngle = angle + (Math.random() - 0.5) * 0.8;
+    
+    if (success) {
+        const power = { 'bicicleta': 40, 'ruleta': 55, 'sombrero': 60, 'cano': 65, 'rabona': 75, 'elastica': 80 }[skill] || 50;
+        p.x += Math.cos(exitAngle) * power;
+        p.y += Math.sin(exitAngle) * power;
+        clampToField(p, PR);
+        defender.vx *= 0.4; defender.vy *= 0.4;
+        const info = {
+            'bicicleta': { text: '¡BICICLETA!', color: '#00ffc8' },
+            'ruleta':    { text: '¡RULETA!',    color: '#ffdd00' },
+            'sombrero':  { text: '¡SOMBRERO!',  color: '#00b8ff' },
+            'cano':      { text: '¡CAÑO!',      color: '#ff5c9f' },
+            'rabona':    { text: '¡RABONA!',    color: '#a58cff' },
+            'elastica':  { text: '¡ELÁSTICA!',  color: '#ff9f43' },
+        }[skill];
+        showBigAlert(info.text, info.color);
+        const scr = toScreen(p.x, p.y);
+        for (let i = 0; i < 15; i++) {
+            const a = (i / 15) * Math.PI * 2;
+            skillParticles.push({
+                x: scr.sx, y: scr.sy,
+                vx: Math.cos(a) * 3, vy: Math.sin(a) * 3,
+                life: 30, maxLife: 30, color: info.color, size: 3,
+            });
+        }
+    } else {
+        p.vx *= 0.2; p.vy *= 0.2;
+        ball.vx = (Math.random() - 0.5) * 6;
+        ball.vy = (Math.random() - 0.5) * 6;
+        showBigAlert("❌ PERDIDO", "#ff3b5c");
+    }
+}
+
+function updateSkillParticles() {
+    for (let i = skillParticles.length - 1; i >= 0; i--) {
+        const p = skillParticles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.94; p.vy *= 0.94;
+        p.life--;
+        if (p.life <= 0) skillParticles.splice(i, 1);
+    }
+}
+function drawSkillParticles() {
+    for (const p of skillParticles) {
+        const alpha = p.life / p.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+}
+
+// =====================================================
+// FALTAS / TACKLES
+// =====================================================
 function attemptTackle(defender, attacker) {
     if (defender.state === 'tackle' || defender.state === 'fallen') return false;
     if (defender.tackleCooldown > 0) return false;
@@ -1315,8 +1209,7 @@ function attemptTackle(defender, attacker) {
 function checkOutOfBounds() {
     if (ball.y - BR < 0 || ball.y + BR > FIELD.h) {
         const y = ball.y < FIELD.h/2 ? BR + 10 : FIELD.h - BR - 10;
-        ball.y = y;
-        ball.x = Math.max(50, Math.min(FIELD.w - 50, ball.x));
+        ball.y = y; ball.x = Math.max(50, Math.min(FIELD.w - 50, ball.x));
         ball.vx = 0; ball.vy = 0;
         gameState = "throwin"; freezeTimer = 60;
         showBigAlert("SAQUE DE BANDA", "#00d4a8"); playWhistle();
@@ -1348,27 +1241,48 @@ function rivalTackleCheck() {
         if (r.tackleCooldown === undefined) r.tackleCooldown = 0;
         if (r.tackleCooldown > 0) continue;
         const d = dist(r, owner);
-        if (d < 30 && Math.random() < 0.04) {
-            attemptTackle(r, owner);
-            break;
-        }
+        if (d < 30 && Math.random() < 0.04) { attemptTackle(r, owner); break; }
     }
 }
 
+// =====================================================
+// UPDATE CONTROLADO (jugador seleccionado)
+// =====================================================
 function updateControlled() {
     if (gameState !== "play") return;
-    const p = you.players[0];
+    const p = you.players[controlledIndex];
+    if (!p) return;
     if (p.state === 'fallen' || p.state === 'tackle') return;
+    
     let dx = 0, dy = 0;
     if (keys['up']) dy -= 1;
     if (keys['down']) dy += 1;
     if (keys['left']) dx -= 1;
     if (keys['right']) dx += 1;
     updatePlayer(p, dx, dy, 5.5);
-    if (keys['action'] && dist(p, ball) < PR + BR + 10) {
+    
+    // TIRO
+    if (keys['shoot'] && dist(p, ball) < PR + BR + 12) {
+        const dirX = p.facing === 'right' ? 1 : p.facing === 'left' ? -1 : 0;
+        const dirY = p.facing === 'down' ? 1 : p.facing === 'up' ? -1 : 0;
+        const targetX = FIELD.w;
+        const targetY = FIELD.h/2;
+        const angle = (dirX === 0 && dirY === 0)
+            ? Math.atan2(targetY - ball.y, targetX - ball.x)
+            : Math.atan2(dirY, dirX);
+        ball.vx = Math.cos(angle) * 22; ball.vy = Math.sin(angle) * 22;
+        keys['shoot'] = false;
+        p.state = 'shoot'; p.stateTimer = 15;
+        lastBallToucher = p; playKick();
+    }
+    
+    // PASE
+    if (keys['action'] && dist(p, ball) < PR + BR + 12) {
         let best = null, bestScore = -Infinity;
         for (let i = 1; i < you.players.length; i++) {
+            if (i === controlledIndex) continue;
             const mate = you.players[i];
+            if (mate.x < 0) continue;
             const fwd = mate.x - p.x;
             if (fwd > 0 && fwd < 500) {
                 const s = fwd - Math.abs(mate.y - p.y) * 0.5 + (mate.pas - 75) * 2;
@@ -1377,14 +1291,19 @@ function updateControlled() {
         }
         if (best) {
             const angle = Math.atan2(best.y - ball.y, best.x - ball.x);
-            ball.vx = Math.cos(angle) * 12; ball.vy = Math.sin(angle) * 12;
+            ball.vx = Math.cos(angle) * 14; ball.vy = Math.sin(angle) * 14;
             keys['action'] = false;
             p.state = 'shoot'; p.stateTimer = 12;
             lastBallToucher = p; playKick();
+            const receiverIdx = you.players.indexOf(best);
+            setTimeout(() => { if (receiverIdx > 0) setControlledIndex(receiverIdx); }, 250);
         }
     }
 }
 
+// =====================================================
+// IA RIVAL
+// =====================================================
 function updateRival() {
     if (gameState !== "play") return;
     const owner = findBallOwner();
@@ -1395,15 +1314,10 @@ function updateRival() {
         if (p.x < 0) continue;
         let target;
         if (weAttack) {
-            if (i === 0) {
-                target = { x: FIELD.w - 40, y: Math.max(FIELD.h/2 - 100, Math.min(FIELD.h/2 + 100, ball.y)) };
-            } else if (i <= 4) {
-                target = { x: Math.max(FIELD.w * 0.55, Math.min(FIELD.w - 100, ball.x + 200)), y: FIELD.h/2 + (i - 2.5) * 100 };
-            } else if (i <= 7) {
-                target = { x: FIELD.w * 0.55 + (i - 6) * 80, y: ball.y * 0.4 + FIELD.h/2 * 0.6 };
-            } else {
-                target = { x: Math.min(FIELD.w - 150, ball.x + 300), y: FIELD.h/2 + (i - 9) * 150 };
-            }
+            if (i === 0) target = { x: FIELD.w - 40, y: Math.max(FIELD.h/2 - 100, Math.min(FIELD.h/2 + 100, ball.y)) };
+            else if (i <= 4) target = { x: Math.max(FIELD.w * 0.55, Math.min(FIELD.w - 100, ball.x + 200)), y: FIELD.h/2 + (i - 2.5) * 100 };
+            else if (i <= 7) target = { x: FIELD.w * 0.55 + (i - 6) * 80, y: ball.y * 0.4 + FIELD.h/2 * 0.6 };
+            else target = { x: Math.min(FIELD.w - 150, ball.x + 300), y: FIELD.h/2 + (i - 9) * 150 };
         } else {
             const carrier = owner;
             if (i === 0) target = { x: FIELD.w - 40, y: FIELD.h/2 };
@@ -1413,11 +1327,7 @@ function updateRival() {
         }
         const dx = target.x - p.x, dy = target.y - p.y;
         const d = Math.hypot(dx, dy) || 1;
-        let speed;
-        if (i === 0) speed = CFG.difSpeed * 0.5;
-        else if (i <= 4) speed = CFG.difSpeed * 0.85;
-        else if (i <= 7) speed = CFG.difSpeed * 0.95;
-        else speed = CFG.difSpeed;
+        let speed = i === 0 ? CFG.difSpeed * 0.5 : (i <= 4 ? CFG.difSpeed * 0.85 : (i <= 7 ? CFG.difSpeed * 0.95 : CFG.difSpeed));
         if (d > 4) updatePlayer(p, dx/d, dy/d, speed * 1.8);
         else { p.vx *= 0.85; p.vy *= 0.85; }
     }
@@ -1434,10 +1344,28 @@ function findBallOwner() {
     return owner;
 }
 
+// =====================================================
+// BALÓN (con pegado al jugador)
+// =====================================================
 function updateBall() {
     if (gameState !== "play") return;
+    const owner = findBallOwner();
+    if (owner) {
+        const angle = owner.facing === 'right' ? 0 :
+                      owner.facing === 'left' ? Math.PI :
+                      owner.facing === 'down' ? Math.PI/2 : -Math.PI/2;
+        const offset = PR + 6;
+        const targetX = owner.x + Math.cos(angle) * offset;
+        const targetY = owner.y + Math.sin(angle) * offset;
+        ball.x += (targetX - ball.x) * 0.4;
+        ball.y += (targetY - ball.y) * 0.4;
+        ball.vx *= 0.6; ball.vy *= 0.6;
+        return;
+    }
+    
     ball.x += ball.vx; ball.y += ball.vy;
-    ball.vx *= 0.97; ball.vy *= 0.97;
+    ball.vx *= 0.96; ball.vy *= 0.96;
+    
     const all = [...you.players, ...rival.players];
     for (const p of all) {
         if (p.x < 0) continue;
@@ -1452,16 +1380,23 @@ function updateBall() {
             lastBallToucher = p;
         }
     }
+    
     if (checkOutOfBounds()) return;
+    
     const gTop = FIELD.h/2 - 100, gBot = FIELD.h/2 + 100;
     if (ball.x + BR > FIELD.w && ball.y > gTop && ball.y < gBot) {
+        const force = Math.min(1, Math.hypot(ball.vx, ball.vy) / 15);
+        kickNet('right', force);
         score.you++; flashMessage("¡GOL!"); playGoal();
-        you.players[0].state = 'celebrate'; you.players[0].stateTimer = 100;
-        resetPositions();
+        you.players[controlledIndex].state = 'celebrate';
+        you.players[controlledIndex].stateTimer = 100;
+        setTimeout(() => resetPositions(), 200);
     }
     if (ball.x - BR < 0 && ball.y > gTop && ball.y < gBot) {
+        const force = Math.min(1, Math.hypot(ball.vx, ball.vy) / 15);
+        kickNet('left', force);
         score.rival++; flashMessage("Gol rival"); playGoal();
-        resetPositions();
+        setTimeout(() => resetPositions(), 200);
     }
 }
 
@@ -1470,14 +1405,14 @@ function resetPositions() {
     ball.vx = 0; ball.vy = 0;
     you.players.forEach((p, i) => {
         if (p.x < 0) return;
-        p.x = CFG.formJug[i][0] * FIELD.w; 
+        p.x = CFG.formJug[i][0] * FIELD.w;
         p.y = CFG.formJug[i][1] * FIELD.h;
         p.state = 'idle'; p.stateTimer = 0;
         p.vx = 0; p.vy = 0;
     });
     rival.players.forEach((p, i) => {
         if (p.x < 0) return;
-        p.x = FIELD.w - CFG.formRiv[i][0] * FIELD.w; 
+        p.x = FIELD.w - CFG.formRiv[i][0] * FIELD.w;
         p.y = CFG.formRiv[i][1] * FIELD.h;
         p.state = 'idle'; p.stateTimer = 0;
         p.vx = 0; p.vy = 0;
@@ -1487,41 +1422,17 @@ function resetPositions() {
 
 function flashMessage(text) { message = text; messageTimer = 100; }
 
-function attemptDribble() {
-    const p = you.players[0];
-    dribbleCooldown = 90;
-    let nearest = null, nd = 999;
-    for (const r of rival.players) {
-        if (r.x < 0) continue;
-        const d = dist(p, r);
-        if (d < nd) { nd = d; nearest = r; }
-    }
-    if (!nearest || nd > 80) { p.vx *= 1.4; p.vy *= 1.4; return; }
-    const prob = 0.4 + (p.reg - nearest.def) / 200 + (p.vel - nearest.vel) / 300;
-    const success = Math.random() < Math.max(0.15, Math.min(0.9, prob));
-    if (success) {
-        const angle = Math.atan2(ball.y - p.y, ball.x - p.x);
-        p.x += Math.cos(angle) * 50; p.y += Math.sin(angle) * 50;
-        clampToField(p, PR);
-        showBigAlert("¡REGATE!", "#00ffc8");
-    } else {
-        p.vx *= 0.3; p.vy *= 0.3;
-        showBigAlert("PERDIDO", "#ff3b5c");
-    }
-}
-
+// =====================================================
+// RENDER
+// =====================================================
 function getSpriteKey(p) {
     if (p.state === 'celebrate') return 'celebrate';
     if (p.state === 'tackle') return 'tackle';
     if (p.state === 'fallen') return 'fallen';
     if (p.state === 'shoot') return 'shoot';
-    
     const speed = Math.hypot(p.vx, p.vy);
     const moving = speed > 0.3;
-    
-    // Dirección
     const dir = p.facing;
-    
     if (moving) {
         const frame = (Math.floor(animTimer / 5) % 2 === 0) ? 'run1' : 'run2';
         const key = `${frame}_${dir}`;
@@ -1532,36 +1443,26 @@ function getSpriteKey(p) {
 
 function drawAll() {
     updateCamera();
-    
-    // Fondo negro
     ctx.fillStyle = '#05070b';
     ctx.fillRect(0, 0, W, H);
-    
-    // Público arriba
     drawCrowd();
-    
-    // Campo
     drawField();
     
-    // Ordenar por Y (los de arriba primero)
     const all = [...rival.players, ...you.players].filter(p => p.x >= 0);
     all.sort((a, b) => a.y - b.y);
     
-    // Dibujar todos
     for (const p of all) {
         const scr = toScreen(p.x, p.y);
         const spriteKey = getSpriteKey(p);
         const sprite = SPRITES[spriteKey] || SPRITES.idle_down;
         const depthScale = 0.75 + (p.y / FIELD.h) * 0.35;
-        const pxSize = 1.8 * depthScale;
-        
+        const pxSize = 1.35 * depthScale;
         const isYou = you.players.indexOf(p) !== -1;
         const c1 = isYou ? CFG.colorJug : CFG.colorRiv;
         const c2 = isYou ? CFG.colorJug2 : CFG.colorRiv2;
+        const flipX = (p.facing === 'left');
+        drawPixelSprite(sprite, scr.sx, scr.sy, pxSize, c1, c2, p.num, p.isControlled, flipX);
         
-        drawPixelSprite(sprite, scr.sx, scr.sy, pxSize, c1, c2, p.num, p.isControlled);
-        
-        // Nombre
         ctx.font = 'bold 10px Courier New';
         ctx.strokeStyle = 'rgba(0,0,0,0.9)';
         ctx.lineWidth = 3;
@@ -1573,14 +1474,11 @@ function drawAll() {
         ctx.textAlign = 'left';
     }
     
-    // Balón
     const bp = toScreen(ball.x, ball.y);
     drawBall({ x: bp.sx, y: bp.sy, vx: ball.vx, vy: ball.vy }, 12);
-    
-    // HUD
+    drawSkillParticles();
     drawScoreboard(score, matchTime);
     
-    // Mensaje central
     if (messageTimer > 0) {
         ctx.fillStyle = 'rgba(0,0,0,0.75)';
         ctx.fillRect(0, H/2 - 55, W, 110);
@@ -1592,6 +1490,9 @@ function drawAll() {
     }
 }
 
+// =====================================================
+// LOOP
+// =====================================================
 function loop(now) {
     const dt = Math.min(50, now - lastTime) / 1000;
     lastTime = now;
@@ -1600,7 +1501,6 @@ function loop(now) {
         matchTime -= dt;
         if (matchTime < 0) matchTime = 0;
     }
-    
     animTimer++;
     if (animTimer > 10000) animTimer = 0;
     
@@ -1612,15 +1512,24 @@ function loop(now) {
     }
     
     if (gameState === "play") {
+        // Cambio automático de jugador cuando el rival tiene el balón
+        const ownerCheck = findBallOwner();
+        if (ownerCheck && ownerCheck.side === 'rival' && animTimer % 30 === 0) {
+            autoSwitchToNearestToBall();
+        }
+        
         updateControlled();
         updateRival();
         updateBall();
         rivalTackleCheck();
+        updateNets();
+        updateSkillParticles();
         
         // IA compañeros
         const owner = findBallOwner();
         const theyAttack = owner && owner.side === 'rival';
         for (let i = 1; i < you.players.length; i++) {
+            if (i === controlledIndex) continue;
             const mate = you.players[i];
             if (mate.x < 0) continue;
             let target;
@@ -1629,7 +1538,6 @@ function loop(now) {
                 else if (i <= 7) target = { x: ball.x - 100, y: mate.homeY };
                 else target = { x: FIELD.w * 0.35, y: mate.homeY };
             } else if (owner && owner.side === 'you') {
-                if (i === you.players.indexOf(owner)) continue;
                 if (i <= 4) target = { x: mate.homeX + 120, y: mate.homeY };
                 else if (i <= 7) target = { x: ball.x + 80, y: ball.y + (i % 2 === 0 ? 120 : -120) };
                 else target = { x: Math.min(FIELD.w - 150, ball.x + 250), y: FIELD.h/2 + (i - 9) * 150 };
