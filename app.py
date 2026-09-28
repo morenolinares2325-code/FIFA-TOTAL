@@ -283,14 +283,11 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
-// =====================================================
-// CÁMARA FIFA 96 — ESCALA MODERADA (para ver porterías)
-// =====================================================
 const ISO = {
     fieldW: 2000, fieldH: 1200,
     camX: 1000, camY: 600,
     targetCamX: 1000, targetCamY: 600,
-    scale: 1.6,                    // ← ESCALA MODERADA
+    scale: 1.6,
     tiltY: 0.55,
     rotation: 0.707,
     centerScreenX: W/2,
@@ -314,9 +311,6 @@ function updateCamera() {
     ISO.camY += (ISO.targetCamY - ISO.camY) * 0.08;
 }
 
-// =====================================================
-// CÉSPED
-// =====================================================
 const CESPEDES = {
     "Clásico": { dark:"#3d8a2b", light:"#4a9e35", line:"#ffffff" },
     "Mojado":  { dark:"#2e6b20", light:"#3a7d28", line:"#e8e8e8" },
@@ -324,9 +318,6 @@ const CESPEDES = {
     "Nieve":   { dark:"#d8e0e8", light:"#eef2f6", line:"#4a5a6a" },
 };
 
-// =====================================================
-// SPRITES 24x32
-// =====================================================
 const SPRITES = {
     idle_down: [
         "........HHHHHHHH........",".......HHHHHHHHHH.......",
@@ -526,24 +517,6 @@ const SPRITES = {
         ".....PPPP..PPPPPP.......",".....PPPP..PPPPPP.......",
         ".....BBBB..BBBBBB.......",".....BBBB..BBBBBB.......",
     ],
-    tackle: [
-        "........................","........................",
-        "........................","........................",
-        "........................","........................",
-        "................HHHHHHHH","...............HHHHHHHHH",
-        "..............HHHHHHHHHH","..............HHsssssssH",
-        "..............HssSSSSssH","..............HsS@SS@SsH",
-        "...............SSSSSSSS.","...............SSS/SS/SS",
-        "................SSSSSSSS","................SSSSSSSS",
-        "......JJJJJJJJJJJJJJJJJ.",".....JJJJccJJJJccJJJJJJ.",
-        "....JJJJcNNNNNNNNcJJJJJ.","...JJJJJcNNNNNNNNcJJJJJ.",
-        "..JJJJJJcNNNNNNNNcJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
-        "...JJJJJJJJJJJJJJJJJJJJ.","....JJJJJJJJJJJJJJJJJJ..",
-        "....PPPPPPPPPPPPPPPPP...","...PPPPPPPPPPPPPPPPPPP..",
-        "..PPPPPPPPPPPPPPPPPPP...",".BBBB...............BBB.",
-        ".BBBB...............BBB.","........................",
-    ],
     fallen: [
         "........................","........................",
         "........................","........................",
@@ -666,15 +639,10 @@ function drawPolygon(cx, cy, sides, radius, rotation) {
     ctx.closePath(); ctx.fill();
 }
 
-// =====================================================
-// GRADAS SIMPLES EN LAS 4 BANDAS (siguiendo la diagonal)
-// =====================================================
 function drawCrowd() {
-    // Fondo oscuro
     ctx.fillStyle = '#0a1a0a';
     ctx.fillRect(0, 0, W, H);
     
-    // Proyectar las 4 esquinas del campo
     const tl = toScreen(0, 0);
     const tr = toScreen(ISO.fieldW, 0);
     const bl = toScreen(0, ISO.fieldH);
@@ -683,105 +651,83 @@ function drawCrowd() {
     const colores = ['#e8b890', '#c84040', '#4060c8', '#f0d040', '#40a040', '#e060a0'];
     const bandaGrosor = 90;
     
-    // ============ GRADA SUPERIOR (borde 0,0 - fieldW,0) ============
-    // Vector normal hacia arriba (perpendicular al borde superior)
-    const topDirX = tr.sx - tl.sx;
-    const topDirY = tr.sy - tl.sy;
+    // Superior
+    const topDirX = tr.sx - tl.sx, topDirY = tr.sy - tl.sy;
     const topLen = Math.hypot(topDirX, topDirY);
-    const topPerpX = -topDirY / topLen;
-    const topPerpY = topDirX / topLen;
-    
+    const topPerpX = -topDirY / topLen, topPerpY = topDirX / topLen;
     for (let fila = 0; fila < 12; fila++) {
         const t = (fila + 1) / 13;
         for (let i = 0; i < 50; i++) {
             const s = i / 49;
-            const bx = tl.sx + topDirX * s;
-            const by = tl.sy + topDirY * s;
+            const bx = tl.sx + topDirX * s, by = tl.sy + topDirY * s;
             const px = bx + topPerpX * bandaGrosor * t;
             const py = by + topPerpY * bandaGrosor * t;
             const idx = (fila + i * 3) % colores.length;
-            const tam = 4;
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(px, py, tam, tam);
+            ctx.fillRect(px, py, 4, 4);
             ctx.fillStyle = '#e8b890';
             ctx.fillRect(px + 1, py - 1, 2, 2);
         }
     }
     
-    // ============ GRADA INFERIOR (borde 0,fieldH - fieldW,fieldH) ============
-    const botDirX = br.sx - bl.sx;
-    const botDirY = br.sy - bl.sy;
+    // Inferior
+    const botDirX = br.sx - bl.sx, botDirY = br.sy - bl.sy;
     const botLen = Math.hypot(botDirX, botDirY);
-    const botPerpX = botDirY / botLen;
-    const botPerpY = -botDirX / botLen;
-    
+    const botPerpX = botDirY / botLen, botPerpY = -botDirX / botLen;
     for (let fila = 0; fila < 12; fila++) {
         const t = (fila + 1) / 13;
         for (let i = 0; i < 50; i++) {
             const s = i / 49;
-            const bx = bl.sx + botDirX * s;
-            const by = bl.sy + botDirY * s;
+            const bx = bl.sx + botDirX * s, by = bl.sy + botDirY * s;
             const px = bx + botPerpX * bandaGrosor * t;
             const py = by + botPerpY * bandaGrosor * t;
             const idx = (fila + i * 5) % colores.length;
-            const tam = 4;
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(px, py, tam, tam);
+            ctx.fillRect(px, py, 4, 4);
             ctx.fillStyle = '#e8b890';
             ctx.fillRect(px + 1, py - 1, 2, 2);
         }
     }
     
-    // ============ GRADA IZQUIERDA (borde 0,0 - 0,fieldH) ============
-    const leftDirX = bl.sx - tl.sx;
-    const leftDirY = bl.sy - tl.sy;
+    // Izquierda
+    const leftDirX = bl.sx - tl.sx, leftDirY = bl.sy - tl.sy;
     const leftLen = Math.hypot(leftDirX, leftDirY);
-    const leftPerpX = -leftDirY / leftLen;
-    const leftPerpY = leftDirX / leftLen;
-    
+    const leftPerpX = -leftDirY / leftLen, leftPerpY = leftDirX / leftLen;
     for (let fila = 0; fila < 12; fila++) {
         const t = (fila + 1) / 13;
         for (let i = 0; i < 30; i++) {
             const s = i / 29;
-            const bx = tl.sx + leftDirX * s;
-            const by = tl.sy + leftDirY * s;
+            const bx = tl.sx + leftDirX * s, by = tl.sy + leftDirY * s;
             const px = bx + leftPerpX * bandaGrosor * t;
             const py = by + leftPerpY * bandaGrosor * t;
             const idx = (fila + i * 7) % colores.length;
-            const tam = 4;
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(px, py, tam, tam);
+            ctx.fillRect(px, py, 4, 4);
             ctx.fillStyle = '#e8b890';
             ctx.fillRect(px + 1, py - 1, 2, 2);
         }
     }
     
-    // ============ GRADA DERECHA (borde fieldW,0 - fieldW,fieldH) ============
-    const rightDirX = br.sx - tr.sx;
-    const rightDirY = br.sy - tr.sy;
+    // Derecha
+    const rightDirX = br.sx - tr.sx, rightDirY = br.sy - tr.sy;
     const rightLen = Math.hypot(rightDirX, rightDirY);
-    const rightPerpX = rightDirY / rightLen;
-    const rightPerpY = -rightDirX / rightLen;
-    
+    const rightPerpX = rightDirY / rightLen, rightPerpY = -rightDirX / rightLen;
     for (let fila = 0; fila < 12; fila++) {
         const t = (fila + 1) / 13;
         for (let i = 0; i < 30; i++) {
             const s = i / 29;
-            const bx = tr.sx + rightDirX * s;
-            const by = tr.sy + rightDirY * s;
+            const bx = tr.sx + rightDirX * s, by = tr.sy + rightDirY * s;
             const px = bx + rightPerpX * bandaGrosor * t;
             const py = by + rightPerpY * bandaGrosor * t;
             const idx = (fila + i * 9) % colores.length;
-            const tam = 4;
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(px, py, tam, tam);
+            ctx.fillRect(px, py, 4, 4);
             ctx.fillStyle = '#e8b890';
             ctx.fillRect(px + 1, py - 1, 2, 2);
         }
     }
     
-    // ============ CARTELES PUBLICITARIOS ============
-    // Cartel superior
+    // Carteles
     ctx.strokeStyle = '#00d4a8';
     ctx.lineWidth = 6;
     ctx.beginPath();
@@ -793,15 +739,14 @@ function drawCrowd() {
     ctx.font = 'bold 11px Courier New';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const cartelTextos = ['· FIFA TOTAL ·', '· RETRO LIGA ·', '· SOUNDSNIP ·', '· FIFA 96 ·', '· LIGA PRO ·'];
+    const textos = ['· FIFA TOTAL ·', '· RETRO LIGA ·', '· SOUNDSNIP ·', '· FIFA 96 ·', '· LIGA PRO ·'];
     for (let i = 0; i < 8; i++) {
         const s = (i + 0.5) / 8;
         const bx = tl.sx + topDirX * s + topPerpX * 6;
         const by = tl.sy + topDirY * s + topPerpY * 6;
-        ctx.fillText(cartelTextos[i % cartelTextos.length], bx, by);
+        ctx.fillText(textos[i % textos.length], bx, by);
     }
     
-    // Cartel inferior
     ctx.strokeStyle = '#ff9f43';
     ctx.lineWidth = 6;
     ctx.beginPath();
@@ -820,9 +765,6 @@ function drawCrowd() {
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 
-// =====================================================
-// PORTERÍAS
-// =====================================================
 function drawGoal(goalX, side, c) {
     const GOAL_H = 100, GOAL_DEPTH = 45;
     const dir = side === 'left' ? -1 : 1;
@@ -832,7 +774,6 @@ function drawGoal(goalX, side, c) {
     const backTop = toScreen(goalX + dir * GOAL_DEPTH, ISO.centerY - GOAL_H);
     const backBot = toScreen(goalX + dir * GOAL_DEPTH, ISO.centerY + GOAL_H);
     
-    // Fondo oscuro (red visible)
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
     ctx.moveTo(frontTop.sx, frontTop.sy);
@@ -842,7 +783,6 @@ function drawGoal(goalX, side, c) {
     ctx.closePath();
     ctx.fill();
     
-    // Red (líneas cruzadas)
     ctx.strokeStyle = 'rgba(255,255,255,0.65)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
@@ -862,7 +802,6 @@ function drawGoal(goalX, side, c) {
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
     
-    // Postes (blancos gruesos)
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
@@ -870,29 +809,23 @@ function drawGoal(goalX, side, c) {
     ctx.beginPath(); ctx.moveTo(frontBot.sx, frontBot.sy); ctx.lineTo(backBot.sx, backBot.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(backTop.sx, backTop.sy); ctx.lineTo(backBot.sx, backBot.sy); ctx.stroke();
     
-    // Base
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(frontTop.sx, frontTop.sy); ctx.lineTo(frontBot.sx, frontBot.sy); ctx.stroke();
     ctx.lineCap = 'butt';
 }
 
-// =====================================================
-// CAMPO
-// =====================================================
 function drawField() {
     const c = CESPEDES[CFG.cesped];
     const tl = toScreen(0, 0), tr = toScreen(ISO.fieldW, 0);
     const br = toScreen(ISO.fieldW, ISO.fieldH), bl = toScreen(0, ISO.fieldH);
     
-    // Fondo césped
     ctx.fillStyle = c.dark;
     ctx.beginPath();
     ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
     ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy);
     ctx.closePath(); ctx.fill();
     
-    // Franjas de césped
     const stripes = 12;
     for (let i = 0; i < stripes; i += 2) {
         const x1 = (i / stripes) * ISO.fieldW;
@@ -906,7 +839,6 @@ function drawField() {
         ctx.closePath(); ctx.fill();
     }
     
-    // Líneas del campo
     const drawLine = (x1, y1, x2, y2) => {
         const p1 = toScreen(x1, y1), p2 = toScreen(x2, y2);
         ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.stroke();
@@ -940,14 +872,10 @@ function drawField() {
     ctx.beginPath(); ctx.arc(pen1.sx, pen1.sy, 3, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(pen2.sx, pen2.sy, 3, 0, Math.PI*2); ctx.fill();
     
-    // PORTERÍAS
     drawGoal(0, 'left', c);
     drawGoal(ISO.fieldW, 'right', c);
 }
 
-// =====================================================
-// MARCADOR
-// =====================================================
 function drawScoreboard(score, time) {
     const x = 20, y = 20;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
@@ -967,9 +895,6 @@ function drawScoreboard(score, time) {
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 
-// =====================================================
-// SONIDOS
-// =====================================================
 let audioCtx = null;
 if (CFG.sonido) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -1008,9 +933,6 @@ function playGoal() {
     noise.start();
 }
 
-// =====================================================
-// ESTADO
-// =====================================================
 const FIELD = { w: ISO.fieldW, h: ISO.fieldH };
 const PR = 14, BR = 8;
 let keys = {};
@@ -1113,9 +1035,6 @@ function clampToField(o, r) {
     o.y = Math.max(r, Math.min(FIELD.h - r, o.y));
 }
 
-// =====================================================
-// MOVIMIENTO SIMPLE (sin momento complejo)
-// =====================================================
 function movePlayer(p, dx, dy, baseSpeed) {
     if (p.state === 'fallen' || p.state === 'tackle') return;
     const boost = 0.7 + (p.vel / 100) * 0.6;
@@ -1204,13 +1123,11 @@ function checkBounds() {
     } else if (ball.x - BR < 0 || ball.x + BR > FIELD.w) {
         const gTop = FIELD.h/2 - 100, gBot = FIELD.h/2 + 100;
         if (ball.y > gTop && ball.y < gBot) {
-            // GOL
             if (ball.x < FIELD.w/2) { score.rival++; showBigAlert("GOL RIVAL", "#ff3b5c"); }
             else { score.you++; showBigAlert("¡GOOOL!", "#00ffc8"); }
             playGoal();
             resetPositions();
         } else {
-            // Córner o saque de puerta
             ball.x = ball.x < FIELD.w/2 ? 100 : FIELD.w - 100;
             ball.y = FIELD.h/2;
             ball.vx = 0; ball.vy = 0;
@@ -1250,7 +1167,6 @@ function updateControlled() {
     if (keys['right']) dx += 1;
     movePlayer(p, dx, dy, 4.5);
     
-    // TIRO
     if (keys['shoot'] && dist(p, ball) < PR + BR + 12) {
         const dirX = p.facing === 'right' ? 1 : p.facing === 'left' ? -1 : 0;
         const dirY = p.facing === 'down' ? 1 : p.facing === 'up' ? -1 : 0;
@@ -1265,7 +1181,6 @@ function updateControlled() {
         playKick();
     }
     
-    // PASE
     if (keys['action'] && dist(p, ball) < PR + BR + 12) {
         let best = null, bestScore = -Infinity;
         for (let i = 0; i < you.players.length; i++) {
@@ -1296,18 +1211,14 @@ function updateRival() {
         
         let target;
         if (i === 0) {
-            // Portero: se queda en su portería
             target = { x: FIELD.w - 40, y: Math.max(FIELD.h/2 - 100, Math.min(FIELD.h/2 + 100, ball.y)) };
         } else if (i <= 4) {
-            // Defensas: van al balón si está cerca
             if (Math.abs(ball.x - p.x) < 400) target = { x: ball.x, y: ball.y };
             else target = { x: FIELD.w * 0.6, y: FIELD.h/2 + (i - 2.5) * 120 };
         } else if (i <= 7) {
-            // Medios: van al balón
             if (Math.abs(ball.x - p.x) < 500) target = { x: ball.x, y: ball.y };
             else target = { x: FIELD.w * 0.55, y: FIELD.h/2 + (i - 6) * 100 };
         } else {
-            // Delanteros: van al balón
             target = { x: ball.x + 100, y: ball.y };
         }
         
@@ -1332,12 +1243,10 @@ function updateAllies() {
         
         let target;
         if (weAttack) {
-            // Acompañan el ataque
             if (i <= 4) target = { x: p.homeX + 150, y: p.homeY };
             else if (i <= 7) target = { x: ball.x + 150, y: ball.y + (i % 2 === 0 ? 120 : -120) };
             else target = { x: Math.min(FIELD.w - 150, ball.x + 250), y: FIELD.h/2 + (i - 9) * 150 };
         } else {
-            // Vuelven a defender
             target = { x: p.homeX, y: p.homeY };
         }
         
@@ -1352,7 +1261,6 @@ function updateAllies() {
 function updateBall() {
     const owner = findBallOwner();
     if (owner) {
-        // Balón pegado al jugador
         const angle = owner.facing === 'right' ? 0 :
                       owner.facing === 'left' ? Math.PI :
                       owner.facing === 'down' ? Math.PI/2 : -Math.PI/2;
@@ -1371,7 +1279,6 @@ function updateBall() {
     ball.vx *= 0.96;
     ball.vy *= 0.96;
     
-    // Colisión con jugadores
     const all = [...you.players, ...rival.players];
     for (const p of all) {
         if (p.state === 'fallen') continue;
@@ -1466,12 +1373,10 @@ function loop(now) {
         if (p.stateTimer === 0 && p.state !== 'idle') p.state = 'idle';
     }
     
-    // Debug info
     const dbg = document.getElementById('debug');
     if (dbg) dbg.textContent = `state:${gameState} freeze:${freezeTimer} t:${Math.floor(matchTime)}`;
 
     if (gameState === "play") {
-        // Auto-switch cuando el rival tiene balón
         const ownerCheck = findBallOwner();
         if (ownerCheck && ownerCheck.side === 'rival' && animTimer % 30 === 0) autoSwitchToNearestToBall();
         
