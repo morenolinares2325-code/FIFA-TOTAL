@@ -66,9 +66,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# DATOS (idénticos a la versión anterior)
-# =========================================================
 DIFICULTADES = {
     "Fácil":   {"speed": 2.6, "vision": 0.5,  "reaction": 0.7},
     "Normal":  {"speed": 3.2, "vision": 0.7,  "reaction": 0.85},
@@ -205,9 +202,6 @@ for key, default in [
         st.session_state[key] = default
 
 
-# =========================================================
-# MOTOR DEL JUEGO — SUPER VERSIÓN
-# =========================================================
 def render_match(eq_jug, eq_riv, tac_jug, tac_riv, dif, cesped, balon, publico, sonido):
     jug = EQUIPOS[eq_jug]
     riv = EQUIPOS[eq_riv]
@@ -265,22 +259,53 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // =====================================================
-// CÁMARA
+// CÁMARA CON PERSPECTIVA CÓNICA + SEGUIMIENTO
 // =====================================================
 const ISO = {
-    scaleX: 0.94, scaleY: 0.55,
-    offsetX: W/2, offsetY: H/2 + 40,
     fieldW: 760, fieldH: 480,
     centerX: 380, centerY: 240,
+    topScaleX: 0.72, bottomScaleX: 1.05, baseScaleY: 0.62,
+    baseX: W/2, baseY: H/2 + 20,
+    camX: 0, camY: 0, targetCamX: 0, targetCamY: 0,
+    zoom: 1.0, targetZoom: 1.0,
 };
 
 function toScreen(x, y) {
+    const depth = y / ISO.fieldH;
+    const scaleX = ISO.topScaleX + (ISO.bottomScaleX - ISO.topScaleX) * depth;
     const nx = (x - ISO.centerX) / ISO.centerX;
     const ny = (y - ISO.centerY) / ISO.centerY;
-    return {
-        sx: ISO.offsetX + nx * (ISO.fieldW/2) * ISO.scaleX,
-        sy: ISO.offsetY + ny * (ISO.fieldH/2) * ISO.scaleY
-    };
+    const zoomFactor = ISO.zoom;
+    const camOffsetX = ISO.camX * scaleX;
+    const camOffsetY = ISO.camY * ISO.baseScaleY;
+    const sx = ISO.baseX + nx * (ISO.fieldW / 2) * scaleX * zoomFactor + camOffsetX;
+    const sy = ISO.baseY + ny * (ISO.fieldH / 2) * ISO.baseScaleY * zoomFactor + camOffsetY;
+    return { sx, sy, depth, scaleX };
+}
+
+function updateCamera() {
+    const targetX = (ball.x - ISO.centerX) * 0.35;
+    const targetY = (ball.y - ISO.centerY) * 0.15;
+    ISO.targetCamX = -targetX;
+    ISO.targetCamY = -targetY;
+    const distRight = Math.abs(ball.x - ISO.fieldW);
+    const distLeft = Math.abs(ball.x - 0);
+    const minDist = Math.min(distRight, distLeft);
+    if (minDist < 150) ISO.targetZoom = 1.18;
+    else if (minDist < 300) ISO.targetZoom = 1.08;
+    else ISO.targetZoom = 1.0;
+    ISO.camX += (ISO.targetCamX - ISO.camX) * 0.08;
+    ISO.camY += (ISO.targetCamY - ISO.camY) * 0.08;
+    ISO.zoom += (ISO.targetZoom - ISO.zoom) * 0.05;
+}
+
+function hexToRgb(hex) {
+    if (hex.startsWith('rgb')) {
+        const m = hex.match(/\d+/g);
+        return m ? {r: +m[0], g: +m[1], b: +m[2]} : null;
+    }
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? { r: parseInt(result[1],16), g: parseInt(result[2],16), b: parseInt(result[3],16) } : null;
 }
 
 // =====================================================
@@ -336,40 +361,34 @@ const SPRITES = {
         "..PPPPPPPP..","..PPPPPPPP..","..PPP..PPP..","..BBB..BBB..",
     ],
     tackle: [
-        "................",
-        "................",
-        "................",
-        "......HHHH......",
-        ".....HSSSSH.....",
-        "....JJJJJJJJ....",
-        "...KJJJJJJJJK...",
-        "..KJNNJJJJJJJK..",
-        "..JJJJJJJJJJJJ..",
-        "..PPPPPPPPPPPP..",
-        ".PPPPP....PPPPP.",
-        "BBBB........BBBB",
+        "................","................","................",
+        "......HHHH......",".....HSSSSH.....","....JJJJJJJJ....",
+        "...KJJJJJJJJK...","..KJNNJJJJJJJK..","..JJJJJJJJJJJJ..",
+        "..PPPPPPPPPPPP..",".PPPPP....PPPPP.","BBBB........BBBB",
     ],
     fallen: [
-        "................",
-        "................",
-        "................",
-        "................",
-        "......HHHH......",
-        ".....HSSSSH.....",
-        "....JJJJJJJJ....",
-        "...JJJNNJJJJ....",
-        "..KJJJJJJJJJK...",
-        "..PPPPPPPPPPP...",
-        ".PPPPP..PPPPP...",
-        "BBBB......BBBB..",
+        "................","................","................","................",
+        "......HHHH......",".....HSSSSH.....","....JJJJJJJJ....",
+        "...JJJNNJJJJ....","..KJJJJJJJJJK...","..PPPPPPPPPPP...",
+        ".PPPPP..PPPPP...","BBBB......BBBB..",
     ],
 };
 
-function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, facingRight, isControlled) {
+function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, facingRight, isControlled, depth) {
     const h = sprite.length;
     const w = sprite[0].length;
     const offsetX = -w * pixelSize / 2;
     const offsetY = -h * pixelSize;
+    const fogAlpha = 0.15 + depth * 0.85;
+    
+    // Sombra proyectada
+    const shadowOffsetY = 3 + depth * 4;
+    const shadowScale = 0.6 + depth * 0.4;
+    ctx.fillStyle = `rgba(0,0,0,${0.25 + depth * 0.25})`;
+    ctx.beginPath();
+    ctx.ellipse(x, y + shadowOffsetY, w * pixelSize * 0.45 * shadowScale,
+                w * pixelSize * 0.18 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
     
     for (let row = 0; row < h; row++) {
         for (let col = 0; col < w; col++) {
@@ -389,12 +408,23 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, facing
                 case 'B': color = '#0a0a0a'; break;
                 default: color = '#ff00ff';
             }
+            if (depth < 1) {
+                const fogR = 60, fogG = 80, fogB = 110;
+                const rgb = hexToRgb(color);
+                if (rgb) {
+                    const mix = (1 - fogAlpha) * 0.5;
+                    const r = Math.round(rgb.r * (1 - mix) + fogR * mix);
+                    const g = Math.round(rgb.g * (1 - mix) + fogG * mix);
+                    const b = Math.round(rgb.b * (1 - mix) + fogB * mix);
+                    color = `rgb(${r},${g},${b})`;
+                }
+            }
             ctx.fillStyle = color;
             ctx.fillRect(Math.round(px), Math.round(py), pixelSize, pixelSize);
         }
     }
     
-    ctx.font = 'bold 8px Courier New';
+    ctx.font = `bold ${Math.round(pixelSize * 5)}px Courier New`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillText(dorsal, x, y - h * pixelSize * 0.55);
@@ -413,26 +443,39 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, facing
 // =====================================================
 // BALÓN
 // =====================================================
+let ballRotation = 0;
 function drawBall(ball, radius) {
-    const { x, y } = ball, r = radius;
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    const { x, y } = ball;
+    const r = radius;
+    const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
+    ballRotation += speed * 0.03;
+    
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
-    ctx.ellipse(x + 3, y + 6, r, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 3, y + 7, r * 1.1, r * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
+    
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
+    
     ctx.fillStyle = '#111111';
-    drawPolygon(x, y, 5, r * 0.35, 0);
+    drawPolygon(x, y, 5, r * 0.35, ballRotation);
     for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        const a = (i / 5) * Math.PI * 2 - Math.PI / 2 + ballRotation;
         drawPolygon(x + Math.cos(a) * r * 0.72, y + Math.sin(a) * r * 0.72, 5, r * 0.28, a);
     }
+    
     ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    ctx.arc(x - r*0.35, y - r*0.4, r*0.3, 0, Math.PI * 2);
+    ctx.fill();
 }
 function drawPolygon(cx, cy, sides, radius, rotation) {
     ctx.beginPath();
@@ -449,28 +492,70 @@ function drawPolygon(cx, cy, sides, radius, rotation) {
 // =====================================================
 function drawCrowd() {
     const cp = CESPEDES[CFG.cesped].crowd;
-    ctx.fillStyle = '#0a0a14';
-    ctx.fillRect(0, 0, W, 80);
-    for (let y = 8; y < 75; y += 6) {
-        for (let x = 4; x < W - 4; x += 6) {
-            const idx = (x + y * 3) % cp.length;
+    
+    const gradTop = ctx.createLinearGradient(0, 0, 0, 110);
+    gradTop.addColorStop(0, '#05070b');
+    gradTop.addColorStop(1, '#151a24');
+    ctx.fillStyle = gradTop;
+    ctx.fillRect(0, 0, W, 110);
+    
+    for (let fila = 0; fila < 3; fila++) {
+        const baseY = 8 + fila * 26;
+        const size = 5 + fila;
+        const spacing = 6 + fila;
+        const alpha = 0.6 + fila * 0.15;
+        ctx.globalAlpha = alpha;
+        for (let x = 4; x < W - 4; x += spacing) {
+            const idx = (x + fila * 13) % cp.length;
             ctx.fillStyle = cp[idx];
-            ctx.fillRect(x, y + 2, 4, 4);
+            ctx.fillRect(x, baseY + 2, size - 1, size - 1);
             ctx.fillStyle = '#e8b890';
-            ctx.fillRect(x + 1, y, 2, 2);
+            ctx.fillRect(x + 1, baseY, size - 3, size - 3);
         }
     }
-    ctx.fillStyle = '#0a0a14';
-    ctx.fillRect(0, H - 60, W, 60);
-    for (let y = H - 55; y < H - 5; y += 6) {
-        for (let x = 4; x < W - 4; x += 6) {
-            const idx = (x + y * 3 + 2) % cp.length;
+    ctx.globalAlpha = 1;
+    
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(0, 95, W, 15);
+    ctx.fillStyle = '#00d4a8';
+    ctx.font = 'bold 10px Courier New';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < 6; i++) {
+        ctx.fillText('RETRO FOOTBALL 96', W/2 + (i - 2.5) * 160, 106);
+    }
+    ctx.textAlign = 'left';
+    
+    const gradBot = ctx.createLinearGradient(0, H - 90, 0, H);
+    gradBot.addColorStop(0, '#151a24');
+    gradBot.addColorStop(1, '#05070b');
+    ctx.fillStyle = gradBot;
+    ctx.fillRect(0, H - 90, W, 90);
+    
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(0, H - 90, W, 15);
+    ctx.fillStyle = '#ff9f43';
+    ctx.font = 'bold 10px Courier New';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < 6; i++) {
+        ctx.fillText('· FIFA TOTAL ·', W/2 + (i - 2.5) * 160, H - 79);
+    }
+    ctx.textAlign = 'left';
+    
+    for (let fila = 0; fila < 2; fila++) {
+        const baseY = H - 70 + fila * 32;
+        const size = 6 + fila;
+        const spacing = 7 + fila;
+        const alpha = 0.7 + fila * 0.15;
+        ctx.globalAlpha = alpha;
+        for (let x = 4; x < W - 4; x += spacing) {
+            const idx = (x + fila * 17 + 3) % cp.length;
             ctx.fillStyle = cp[idx];
-            ctx.fillRect(x, y + 2, 4, 4);
+            ctx.fillRect(x, baseY + 2, size - 1, size - 1);
             ctx.fillStyle = '#e8b890';
-            ctx.fillRect(x + 1, y, 2, 2);
+            ctx.fillRect(x + 1, baseY, size - 3, size - 3);
         }
     }
+    ctx.globalAlpha = 1;
 }
 
 // =====================================================
@@ -478,14 +563,42 @@ function drawCrowd() {
 // =====================================================
 function drawField() {
     const c = CESPEDES[CFG.cesped];
-    const pxSize = 8;
-    for (let py = 100; py < H - 60; py += pxSize) {
-        for (let px = 40; px < W - 40; px += pxSize) {
-            const stripe = Math.floor((px - 40) / 60) % 2;
-            ctx.fillStyle = stripe ? c.light : c.dark;
-            ctx.fillRect(px, py, pxSize, pxSize);
-        }
+    
+    const tl = toScreen(0, 0);
+    const tr = toScreen(ISO.fieldW, 0);
+    const br = toScreen(ISO.fieldW, ISO.fieldH);
+    const bl = toScreen(0, ISO.fieldH);
+    
+    ctx.fillStyle = c.dark;
+    ctx.beginPath();
+    ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
+    ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy);
+    ctx.closePath(); ctx.fill();
+    
+    const stripes = 14;
+    for (let i = 0; i < stripes; i++) {
+        const x1 = (i / stripes) * ISO.fieldW;
+        const x2 = ((i + 1) / stripes) * ISO.fieldW;
+        if (i % 2 === 0) continue;
+        const p1 = toScreen(x1, 0), p2 = toScreen(x2, 0);
+        const p3 = toScreen(x2, ISO.fieldH), p4 = toScreen(x1, ISO.fieldH);
+        ctx.fillStyle = c.light;
+        ctx.beginPath();
+        ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy);
+        ctx.lineTo(p3.sx, p3.sy); ctx.lineTo(p4.sx, p4.sy);
+        ctx.closePath(); ctx.fill();
     }
+    
+    ctx.globalAlpha = 0.08;
+    for (let i = 0; i < 300; i++) {
+        const rx = Math.random() * ISO.fieldW;
+        const ry = Math.random() * ISO.fieldH;
+        const p = toScreen(rx, ry);
+        const size = 1 + Math.random() * 2;
+        ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#000000';
+        ctx.fillRect(p.sx, p.sy, size, size);
+    }
+    ctx.globalAlpha = 1;
     
     const drawIsoLine = (x1, y1, x2, y2) => {
         const p1 = toScreen(x1, y1), p2 = toScreen(x2, y2);
@@ -506,7 +619,8 @@ function drawField() {
     };
     
     ctx.strokeStyle = c.line; ctx.lineWidth = 2;
-    ctx.shadowColor = c.line; ctx.shadowBlur = 3;
+    ctx.shadowColor = c.line; ctx.shadowBlur = 4;
+    
     drawIsoRect(0, 0, ISO.fieldW, ISO.fieldH);
     drawIsoLine(ISO.centerX, 0, ISO.centerX, ISO.fieldH);
     drawIsoCircle(ISO.centerX, ISO.centerY, 60);
@@ -514,6 +628,12 @@ function drawField() {
     drawIsoRect(ISO.fieldW - 90, ISO.centerY - 100, 90, 200);
     drawIsoRect(0, ISO.centerY - 50, 35, 100);
     drawIsoRect(ISO.fieldW - 35, ISO.centerY - 50, 35, 100);
+    
+    const pPen1 = toScreen(70, ISO.centerY);
+    const pPen2 = toScreen(ISO.fieldW - 70, ISO.centerY);
+    ctx.fillStyle = c.line;
+    ctx.beginPath(); ctx.arc(pPen1.sx, pPen1.sy, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(pPen2.sx, pPen2.sy, 2, 0, Math.PI*2); ctx.fill();
     
     const pt1 = toScreen(0, ISO.centerY - 45);
     const pt2 = toScreen(0, ISO.centerY + 45);
@@ -523,7 +643,7 @@ function drawField() {
     const pt4 = toScreen(ISO.fieldW, ISO.centerY + 45);
     ctx.fillRect(pt3.sx, pt3.sy, 12, pt4.sy - pt3.sy);
     
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
     for (let y = pt1.sy; y < pt2.sy; y += 4) {
         ctx.beginPath(); ctx.moveTo(pt1.sx - 12, y); ctx.lineTo(pt1.sx, y); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(pt3.sx, y); ctx.lineTo(pt3.sx + 12, y); ctx.stroke();
@@ -617,11 +737,10 @@ function startAmbient() {
 startAmbient();
 
 // =====================================================
-// ESTADO DEL JUEGO (con soporte para reglas)
+// ESTADO
 // =====================================================
 const FIELD = { w: ISO.fieldW, h: ISO.fieldH };
 const PR = 9, BR = 6;
-
 let keys = {};
 let matchTime = 90;
 let score = { you: 0, rival: 0 };
@@ -630,15 +749,47 @@ let messageTimer = 0;
 let lastTime = performance.now();
 let dribbleCooldown = 0;
 let animTimer = 0;
-
-// Estado del partido: "play" | "foul" | "corner" | "throwin" | "penalty" | "freeze"
 let gameState = "play";
 let freezeTimer = 0;
-let lastBallToucher = null; // para saber quién saca
-let offsideFlag = false;
-
-// Tarjetas: {playerId: {yellow: 0, red: false}}
+let lastBallToucher = null;
 const cards = {};
+const particles = [];
+
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1,
+            life: 30 + Math.random() * 20,
+            maxLife: 50,
+            color,
+            size: 2 + Math.random() * 3,
+        });
+    }
+}
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.15; p.vx *= 0.96;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+function drawParticles() {
+    particles.forEach(p => {
+        const alpha = p.life / p.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
 
 // =====================================================
 // JUGADORES
@@ -686,7 +837,6 @@ function clampToField(o, r) {
     o.x = Math.max(r, Math.min(FIELD.w - r, o.x));
     o.y = Math.max(r, Math.min(FIELD.h - r, o.y));
 }
-
 function updatePlayer(p, dx, dy, baseSpeed) {
     if (p.state === 'fallen' || p.state === 'tackle') return;
     const boost = 0.6 + (p.vel / 100) * 0.8;
@@ -699,135 +849,82 @@ function updatePlayer(p, dx, dy, baseSpeed) {
     clampToField(p, PR);
 }
 
-// =====================================================
-// ALERTAS VISUALES
-// =====================================================
 function showBigAlert(text, color) {
     const a = document.getElementById('bigAlert');
-    a.textContent = text;
-    a.style.color = color;
+    a.textContent = text; a.style.color = color;
     a.style.opacity = '1';
     setTimeout(() => a.style.opacity = '0', 1200);
 }
 function showCard(type) {
     const a = document.getElementById('cardAlert');
-    a.textContent = type;
-    a.style.opacity = '1';
+    a.textContent = type; a.style.opacity = '1';
     setTimeout(() => a.style.opacity = '0', 1500);
 }
 
-// =====================================================
-// REGLAS: TACKLE
-// =====================================================
 function attemptTackle(defender, attacker) {
-    // Se llama cuando el defensor está muy cerca del atacante
     if (defender.state === 'tackle' || defender.state === 'fallen') return false;
     if (defender.tackleCooldown > 0) return false;
-    
     defender.state = 'tackle';
     defender.stateTimer = 18;
     defender.tackleCooldown = 120;
     playKick();
-    
-    // Probabilidad de éxito según def vs reg del atacante
     const prob = 0.35 + (defender.def - attacker.reg) / 250;
     const success = Math.random() < Math.max(0.15, Math.min(0.85, prob));
-    
     if (success) {
-        // Roba el balón: se lo lleva en dirección a su portería
         const angle = Math.atan2(attacker.y - defender.y, attacker.x - defender.x);
         ball.vx = Math.cos(angle) * 5;
         ball.vy = Math.sin(angle) * 5;
-        // El atacante cae
-        attacker.state = 'fallen';
-        attacker.stateTimer = 40;
+        attacker.state = 'fallen'; attacker.stateTimer = 40;
         lastBallToucher = defender;
         return true;
     } else {
-        // Falta: el defensor entra tarde y tumba al atacante
-        defender.state = 'fallen';
-        defender.stateTimer = 60;
-        attacker.state = 'fallen';
-        attacker.stateTimer = 40;
-        // Pitamos falta
+        defender.state = 'fallen'; defender.stateTimer = 60;
+        attacker.state = 'fallen'; attacker.stateTimer = 40;
         commitFoul(defender, attacker);
         return false;
     }
 }
 
-// =====================================================
-// REGLAS: FALTA
-// =====================================================
 function commitFoul(defender, attacker) {
     playWhistle();
     gameState = "foul";
-    freezeTimer = 120; // 2 segundos congelado
-    
-    // ¿Es dentro del área del defensor?
-    const isInBox = 
+    freezeTimer = 120;
+    const isInBox =
         (defender.side === 'you' && attacker.x < 90 && Math.abs(attacker.y - ISO.centerY) < 100) ||
         (defender.side === 'rival' && attacker.x > FIELD.w - 90 && Math.abs(attacker.y - ISO.centerY) < 100);
-    
     if (isInBox) {
         showBigAlert("¡PENALTI!", "#ff3b5c");
         gameState = "penalty";
-        // Colocar balón en el punto de penalti
-        if (defender.side === 'you') {
-            // Penalti para el rival → su punto es a la izquierda de tu portería
-            ball.x = 70;
-            ball.y = ISO.centerY;
-        } else {
-            // Penalti para ti → cerca de la portería rival
-            ball.x = FIELD.w - 70;
-            ball.y = ISO.centerY;
-        }
+        if (defender.side === 'you') { ball.x = 70; ball.y = ISO.centerY; }
+        else { ball.x = FIELD.w - 70; ball.y = ISO.centerY; }
     } else {
         showBigAlert("FALTA", "#ffdd00");
-        // Colocar balón donde ocurrió
-        ball.x = attacker.x;
-        ball.y = attacker.y;
+        ball.x = attacker.x; ball.y = attacker.y;
     }
     ball.vx = 0; ball.vy = 0;
-    
-    // Probabilidad de tarjeta
     const cardRoll = Math.random();
     if (cardRoll < 0.35) {
-        // Amarilla
         const id = defender.side + '_' + defender.num;
         cards[id] = cards[id] || { yellow: 0 };
         cards[id].yellow++;
         showCard("🟨");
-        defender.state = 'fallen';
-        defender.stateTimer = 120;
+        defender.state = 'fallen'; defender.stateTimer = 120;
         if (cards[id].yellow >= 2) {
-            // Segunda amarilla → roja
             showCard("🟥");
             cards[id].red = true;
-            // Marcar como expulsado (fuera del campo)
-            defender.x = -200;
-            defender.y = -200;
+            defender.x = -200; defender.y = -200;
         }
     } else if (cardRoll < 0.5) {
-        // Roja directa (poco frecuente)
         const id = defender.side + '_' + defender.num;
         cards[id] = cards[id] || { yellow: 0 };
         cards[id].red = true;
         showCard("🟥");
-        defender.x = -200;
-        defender.y = -200;
+        defender.x = -200; defender.y = -200;
     }
 }
 
-// =====================================================
-// REGLAS: CÓRNER Y SAQUE DE BANDA
-// =====================================================
-function isGoalAreaTop(y) { return y < ISO.centerY - 45; }
-function isGoalAreaBottom(y) { return y > ISO.centerY + 45; }
-
 function checkOutOfBounds() {
-    // Fuera por lateral
     if (ball.y - BR < 0 || ball.y + BR > FIELD.h) {
-        const side = lastBallToucher && lastBallToucher.side === 'you' ? 'rival' : 'you';
         const y = ball.y < FIELD.h/2 ? BR + 10 : FIELD.h - BR - 10;
         ball.y = y;
         ball.x = Math.max(50, Math.min(FIELD.w - 50, ball.x));
@@ -838,17 +935,11 @@ function checkOutOfBounds() {
         playWhistle();
         return true;
     }
-    // Fuera por línea de fondo (gol o córner)
     if (ball.x - BR < 0 || ball.x + BR > FIELD.w) {
         const gTop = FIELD.h/2 - 45, gBot = FIELD.h/2 + 45;
         const isGoal = (ball.y > gTop && ball.y < gBot);
-        if (isGoal) {
-            // ya gestionado aparte
-            return false;
-        }
-        // Es córner
+        if (isGoal) return false;
         const isLeft = ball.x < FIELD.w/2;
-        // Saber qué esquina
         const cornerY = ball.y < FIELD.h/2 ? 10 : FIELD.h - 10;
         ball.x = isLeft ? 10 : FIELD.w - 10;
         ball.y = cornerY;
@@ -862,19 +953,10 @@ function checkOutOfBounds() {
     return false;
 }
 
-// =====================================================
-// REGLAS: FUERA DE JUEGO
-// =====================================================
 function checkOffside() {
-    // Simplificado: cuando hay pase hacia adelante, si el receptor está más adelantado
-    // que el último defensor rival, es fuera de juego.
-    // Aquí lo aplicamos cada vez que el balón se mueve rápido hacia adelante
-    // (se puede complicar más, pero para una demo es suficiente)
     if (gameState !== "play") return;
-    if (lastBallToucher !== you.players[0]) return; // solo cuando TÚ tienes el balón
+    if (lastBallToucher !== you.players[0]) return;
     if (Math.abs(ball.vx) < 5 && Math.abs(ball.vy) < 5) return;
-    
-    // Buscar receptor potencial del pase
     let receiver = null, rdist = 999;
     you.players.forEach((p, i) => {
         if (i === 0 || p.state === 'fallen') return;
@@ -882,34 +964,22 @@ function checkOffside() {
         if (d < 40 && d < rdist) { rdist = d; receiver = p; }
     });
     if (!receiver) return;
-    
-    // Último defensor rival
     let lastDefenderX = FIELD.w;
-    rival.players.forEach(r => {
-        if (r.x < lastDefenderX) lastDefenderX = r.x;
-    });
-    
-    // ¿Receptor por delante del último defensor y en campo rival?
+    rival.players.forEach(r => { if (r.x < lastDefenderX) lastDefenderX = r.x; });
     if (receiver.x > lastDefenderX + 5 && receiver.x > FIELD.w / 2) {
         playWhistle();
         showBigAlert("FUERA DE JUEGO", "#ff3b5c");
         gameState = "freeze";
         freezeTimer = 90;
-        // Reiniciar con falta indirecta
-        ball.x = receiver.x;
-        ball.y = receiver.y;
+        ball.x = receiver.x; ball.y = receiver.y;
         ball.vx = 0; ball.vy = 0;
     }
 }
 
-// =====================================================
-// INTENTOS DE TACKLE AUTOMÁTICO DE LA IA
-// =====================================================
 function rivalTackleCheck() {
     if (gameState !== "play") return;
     const owner = findBallOwner();
     if (!owner || owner.side !== 'you') return;
-    // Si algún rival está muy cerca del portador, intenta tackle
     rival.players.forEach(r => {
         if (r.state === 'tackle' || r.state === 'fallen') return;
         if (r.tackleCooldown === undefined) r.tackleCooldown = 0;
@@ -921,9 +991,6 @@ function rivalTackleCheck() {
     });
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
 function updateControlled() {
     if (gameState !== "play") return;
     const p = you.players[0];
@@ -935,7 +1002,6 @@ function updateControlled() {
     if (keys['d'] || keys['arrowright']) dx += 1;
     if (dx !== 0) p.facingRight = dx > 0;
     updatePlayer(p, dx, dy, 4.5);
-    
     if (keys[' '] && dist(p, ball) < PR + BR + 8) {
         let best = null, bestScore = -Infinity;
         for (let i = 1; i < you.players.length; i++) {
@@ -954,6 +1020,8 @@ function updateControlled() {
             p.state = 'shoot'; p.stateTimer = 15;
             lastBallToucher = p;
             playKick();
+            const bp2 = toScreen(ball.x, ball.y);
+            spawnParticles(bp2.sx, bp2.sy, '#ffffff', 8);
             setTimeout(() => checkOffside(), 100);
         }
     }
@@ -964,7 +1032,7 @@ function updateRival() {
     for (let i = 0; i < rival.players.length; i++) {
         const p = rival.players[i];
         if (p.state === 'fallen' || p.state === 'tackle') continue;
-        if (p.x < 0) continue; // expulsado
+        if (p.x < 0) continue;
         let target;
         if (i === 0) target = ball;
         else target = {
@@ -993,7 +1061,6 @@ function updateBall(dt) {
     if (gameState !== "play") return;
     ball.x += ball.vx; ball.y += ball.vy;
     ball.vx *= 0.97; ball.vy *= 0.97;
-    
     [...you.players, ...rival.players].forEach(p => {
         if (p.x < 0) return;
         if (p.state === 'tackle' || p.state === 'fallen') return;
@@ -1007,21 +1074,22 @@ function updateBall(dt) {
             lastBallToucher = p;
         }
     });
-    
-    // Comprobar fuera de banda / línea de fondo / córner
     if (checkOutOfBounds()) return;
-    
-    // Comprobar gol
     const gTop = FIELD.h/2 - 45, gBot = FIELD.h/2 + 45;
     if (ball.x + BR > FIELD.w && ball.y > gTop && ball.y < gBot) {
         score.you++; flashMessage("¡GOL!");
         playGoal();
+        const bp3 = toScreen(ball.x, ball.y);
+        spawnParticles(bp3.sx, bp3.sy, '#00ffc8', 40);
+        spawnParticles(bp3.sx, bp3.sy, '#ff5c9f', 30);
         you.players[0].state = 'celebrate'; you.players[0].stateTimer = 120;
         resetPositions("kickoff", "rival");
     }
     if (ball.x - BR < 0 && ball.y > gTop && ball.y < gBot) {
         score.rival++; flashMessage("Gol rival");
         playGoal();
+        const bp4 = toScreen(ball.x, ball.y);
+        spawnParticles(bp4.sx, bp4.sy, '#ff3b5c', 40);
         resetPositions("kickoff", "you");
     }
 }
@@ -1031,7 +1099,7 @@ function resetPositions(type, kickoffSide) {
     ball.vx = 0; ball.vy = 0;
     CFG.formJug.forEach(([fx, fy], i) => {
         const p = you.players[i];
-        if (p.x < 0) return; // expulsado no vuelve
+        if (p.x < 0) return;
         p.x = fx * FIELD.w; p.y = fy * FIELD.h;
         p.state = 'idle'; p.stateTimer = 0;
         p.vx = 0; p.vy = 0;
@@ -1072,9 +1140,6 @@ function attemptDribble() {
     }
 }
 
-// =====================================================
-// RENDER
-// =====================================================
 function getPlayerState(p) {
     if (p.state === 'celebrate' && p.stateTimer > 0) return 'celebrate';
     if (p.state === 'shoot' && p.stateTimer > 0) return 'shoot';
@@ -1086,6 +1151,9 @@ function getPlayerState(p) {
 }
 
 function drawAll() {
+    updateCamera();
+    ctx.fillStyle = '#05070b';
+    ctx.fillRect(0, 0, W, H);
     drawCrowd();
     drawField();
     
@@ -1093,6 +1161,7 @@ function drawAll() {
         if (p.x < 0) return;
         const scr = toScreen(p.x, p.y);
         p.sx = scr.sx; p.sy = scr.sy;
+        p.depth = scr.depth;
     });
     
     const allPlayers = [
@@ -1103,13 +1172,13 @@ function drawAll() {
     allPlayers.forEach(p => {
         const state = getPlayerState(p);
         const sprite = SPRITES[state] || SPRITES.idle;
-        const depth = 0.75 + (p.y / ISO.fieldH) * 0.35;
-        const pxSize = 1.6 * depth;
+        const depthScale = 0.75 + p.depth * 0.5;
+        const pxSize = 2.0 * depthScale;
         const c1 = p.sideKey === 'you' ? CFG.colorJug : CFG.colorRiv;
         const c2 = p.sideKey === 'you' ? CFG.colorJug2 : CFG.colorRiv2;
-        drawPixelSprite(sprite, p.sx, p.sy, pxSize, c1, c2, p.num, p.facingRight, p.isControlled);
+        drawPixelSprite(sprite, p.sx, p.sy, pxSize, c1, c2, p.num, p.facingRight, p.isControlled, p.depth);
         
-        ctx.font = 'bold 9px Courier New';
+        ctx.font = 'bold 10px Courier New';
         ctx.strokeStyle = 'rgba(0,0,0,0.9)';
         ctx.lineWidth = 3;
         ctx.textAlign = 'center';
@@ -1121,51 +1190,41 @@ function drawAll() {
     });
     
     const bp = toScreen(ball.x, ball.y);
-    drawBall({ x: bp.sx, y: bp.sy }, 9);
+    drawBall({ x: bp.sx, y: bp.sy, vx: ball.vx, vy: ball.vy }, 10);
     drawScoreboard(score, matchTime);
     
     if (messageTimer > 0) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, H/2 - 50, W, 100);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(0, H/2 - 55, W, 110);
         ctx.fillStyle = '#ff5c9f';
-        ctx.font = 'bold 56px Courier New';
+        ctx.font = 'bold 60px Courier New';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#ff5c9f'; ctx.shadowBlur = 30;
+        ctx.shadowColor = '#ff5c9f'; ctx.shadowBlur = 40;
         ctx.fillText(message, W/2, H/2);
         ctx.shadowBlur = 0;
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     }
 }
 
-// =====================================================
-// LOOP
-// =====================================================
 function loop(now) {
     const dt = Math.min(50, now - lastTime) / 1000;
     lastTime = now;
-    
     if (gameState === "play" || gameState === "penalty") {
         matchTime -= dt;
         if (matchTime < 0) matchTime = 0;
     }
-    
     animTimer++;
     if (animTimer > 10000) animTimer = 0;
-    
-    // Update players timers
     [...you.players, ...rival.players].forEach(p => {
         if (p.stateTimer > 0) p.stateTimer--;
         if (p.stateTimer === 0 && p.state !== 'idle') p.state = 'idle';
         if (p.tackleCooldown > 0) p.tackleCooldown--;
     });
-    
     if (gameState === "play") {
         updateControlled();
         updateRival();
         updateBall(dt);
         rivalTackleCheck();
-        
-        // IA compañeros
         const owner = findBallOwner();
         if (owner && owner.side === 'rival') {
             for (let i = 1; i < you.players.length; i++) {
@@ -1190,16 +1249,13 @@ function loop(now) {
         }
     } else if (freezeTimer > 0) {
         freezeTimer--;
-        if (freezeTimer === 0) {
-            // Reset del estado y reanudar
-            gameState = "play";
-        }
+        if (freezeTimer === 0) gameState = "play";
     }
-    
     if (messageTimer > 0) messageTimer--;
     if (dribbleCooldown > 0) dribbleCooldown--;
-    
+    updateParticles();
     drawAll();
+    drawParticles();
     requestAnimationFrame(loop);
 }
 
@@ -1213,9 +1269,6 @@ requestAnimationFrame(loop);
     return html
 
 
-# =========================================================
-# FASES UI (idénticas a la versión anterior)
-# =========================================================
 def fase_menu():
     st.markdown('<h1 class="hero-title">⚽ RETRO FOOTBALL 96</h1>', unsafe_allow_html=True)
     st.markdown('<p class="hero-sub">SUPER EDITION · 1996</p>', unsafe_allow_html=True)
@@ -1228,6 +1281,7 @@ def fase_menu():
     with c2:
         if st.button("▶️ CONTINUAR", use_container_width=True):
             st.session_state.fase = "equipos"; st.rerun()
+
 
 def fase_equipos():
     st.markdown('<h1 class="hero-title">SELECCIONA EQUIPOS</h1>', unsafe_allow_html=True)
@@ -1261,6 +1315,7 @@ def fase_equipos():
             if st.button("➡️ Tácticas", use_container_width=True):
                 st.session_state.fase = "tacticas"; st.rerun()
 
+
 def fase_tacticas():
     st.markdown('<h1 class="hero-title">TÁCTICAS</h1>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -1289,6 +1344,7 @@ def fase_tacticas():
         if st.session_state.tactica_jugador and st.session_state.tactica_rival:
             if st.button("➡️ Alineación", use_container_width=True):
                 st.session_state.fase = "alineacion"; st.rerun()
+
 
 def fase_alineacion():
     st.markdown('<h1 class="hero-title">ALINEACIÓN</h1>', unsafe_allow_html=True)
@@ -1322,6 +1378,7 @@ def fase_alineacion():
         if st.button("⚽ JUGAR", use_container_width=True):
             st.session_state.fase = "partido"; st.rerun()
 
+
 def fase_partido():
     st.markdown('<h1 class="hero-title">⚽ EN JUEGO</h1>', unsafe_allow_html=True)
     html = render_match(
@@ -1336,9 +1393,7 @@ def fase_partido():
         if st.button("🔙 Volver al menú", use_container_width=True):
             st.session_state.fase = "menu"; st.rerun()
 
-# =========================================================
-# ROUTER
-# =========================================================
+
 if st.session_state.fase == "menu": fase_menu()
 elif st.session_state.fase == "equipos": fase_equipos()
 elif st.session_state.fase == "tacticas": fase_tacticas()
