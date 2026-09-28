@@ -280,13 +280,13 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // =====================================================
-// CÁMARA FIFA 96 (ROTADA 45° + PERSPECTIVA + ZOOM)
+// CÁMARA FIFA 96 (ROTADA 45° + ZOOM ALTO)
 // =====================================================
 const ISO = {
     fieldW: 2000, fieldH: 1200,
     camX: 1000, camY: 600,
     targetCamX: 1000, targetCamY: 600,
-    scale: 2.2,
+    scale: 3.0,
     tiltY: 0.52,
     rotation: 0.707,
     centerScreenX: W/2,
@@ -323,243 +323,550 @@ const CESPEDES = {
 };
 
 // =====================================================
-// SPRITES 24x32 CON DIRECCIONES
+// SPRITES 28x40 (piernas gruesas, cuerpo ancho)
 // =====================================================
 const SPRITES = {
     idle_down: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHssssssssHH......",
-        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......","........SSSSSSSS........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHsssssssssssHH......",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsS@SSSSSS@SsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        "......HHsSSS/SS/SSSsHH......",
+        ".......HssSSSSSSSSssH.......",
+        "........ssSSSSSSSSss........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        ".......JJJJJJJJJJJJJJ.......",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        ".........bbb..bbbbb.........",
     ],
     run1_down: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHssssssssHH......",
-        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......","........SSSSSSSS........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPP......",
-        "....PPPPPP...PPPPP......","....PPPP......PPPP......",
-        "....BBB.......PPPP......","....BBB.......BBBB......",
-        "..............BBBB......","..............BBB.......",
-        "........................","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHsssssssssssHH......",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsS@SSSSSS@SsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        "......HHsSSS/SS/SSSsHH......",
+        ".......HssSSSSSSSSssH.......",
+        "........ssSSSSSSSSss........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        ".....PPPPPP.....PPPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....BBBB........PPPPP......",
+        ".....BBBB........BBBB.......",
+        ".....BBBB........BBBB.......",
+        ".................BBBB.......",
+        ".................BBBB.......",
+        ".................bbb........",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     run2_down: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHssssssssHH......",
-        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......","........SSSSSSSS........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....","......PPPPPPPPPPPPP.....",
-        "......PPPPP...PPPPPP....","......PPPP......PPPP....",
-        "......PPPP.......BBB....","......BBBB.......BBB....",
-        "......BBBB..............",".......BBB..............",
-        "........................","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHsssssssssssHH......",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsS@SSSSSS@SsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        "......HHsSSS/SS/SSSsHH......",
+        ".......HssSSSSSSSSssH.......",
+        "........ssSSSSSSSSss........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        "......PPPPPP.....PPPPPP.....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB.................",
+        ".......BBBB.................",
+        "........bbb.................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     idle_up: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......","........ssssssss........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHHHHHHHHHHHHHH......",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHH.......",
+        "........HHHHHHHHHHHH........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        ".......JJJJJJJJJJJJJJ.......",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        ".........bbb..bbbbb.........",
     ],
     run1_up: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......","........ssssssss........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPP......",
-        "....PPPPPP...PPPPP......","....PPPP......PPPP......",
-        "....BBB.......PPPP......","....BBB.......BBBB......",
-        "..............BBBB......","..............BBB.......",
-        "........................","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHHHHHHHHHHHHHH......",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHH.......",
+        "........HHHHHHHHHHHH........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        ".....PPPPPP.....PPPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....BBBB........PPPPP......",
+        ".....BBBB........BBBB.......",
+        ".....BBBB........BBBB.......",
+        ".................BBBB.......",
+        ".................BBBB.......",
+        ".................bbb........",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     run2_up: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        "......HHHHHHHHHHHH......","......HHHHHHHHHHHH......",
-        ".......HHHHHHHHHH.......","........ssssssss........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJcNNNNcJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....","......PPPPPPPPPPPPP.....",
-        "......PPPPP...PPPPPP....","......PPPP......PPPP....",
-        "......PPPP.......BBB....","......BBBB.......BBB....",
-        "......BBBB..............",".......BBB..............",
-        "........................","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHHHHHHHHHHHHHH......",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        ".....HHHHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHH.......",
+        "........HHHHHHHHHHHH........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        "......PPPPPP.....PPPPPP.....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB.................",
+        ".......BBBB.................",
+        "........bbb.................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     idle_right: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......","......HHsSSSSSsH........",
-        "......HHsS@SSSss........","......HHsSSSSSs.........",
-        ".......HSsssssS.........",".......SSS/SSS..........",
-        "........SSSSSS..........","........SSSSSS..........",
-        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
-        "....JJJJJJJJJJJJJJ......",".....JJJJJJJJJJJJ.......",
-        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
-        ".....PPPP.PPPPPP........",".....PPPP.PPPPPP........",
-        ".....BBBB.BBBBBB........",".....BBBB.BBBBBB........",
-        "........................","........................",
+        ".........HHHHHHHHHHH........",
+        "........HHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHHHH....",
+        "......HHHHsssssssssHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsS@SSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        "......HHHsSSS/SS/SSsHH......",
+        ".......HHsSSSSSSSSSsHH......",
+        "........ssSSSSSSSSsss.......",
+        "..........SSSSSSSSS.........",
+        "..........SSSSSSSSS.........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJJcJJJJcJJJ.......",
+        "......JJJJJJcNNNNcJJJJ......",
+        "......JJJJJJcNNNNcJJJJ......",
+        ".....JJJJJJJcNNNNcJJJJJ.....",
+        "....KJJJJJJJcNNNNcJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        ".......JJJJJJJJJJJJJJ.......",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPP.PPPPPPP........",
+        "........PPPP.PPPPPPP........",
+        "........PPPP.PPPPPPP........",
+        "........PPPP.PPPPPPP........",
+        "........BBBB.BBBBBBB........",
+        "........BBBB.BBBBBBB........",
+        "........BBBB.BBBBBBB........",
+        ".........bbb.bbbbbb.........",
     ],
     run1_right: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......","......HHsSSSSSsH........",
-        "......HHsS@SSSss........","......HHsSSSSSs.........",
-        ".......HSsssssS.........",".......SSS/SSS..........",
-        "........SSSSSS..........","........SSSSSS..........",
-        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
-        ".....JJJJJJJJJJJJ.......",".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........",".....PPPPPPPPPPP........",
-        "....PPPPPP..PPP.........","....PPPP.....PP.........",
-        "....BBB......PPP........","....BBB......BBBB.......",
-        ".............BBBB.......",".............BBB........",
-        "........................","........................",
+        ".........HHHHHHHHHHH........",
+        "........HHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHHHH....",
+        "......HHHHsssssssssHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsS@SSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        "......HHHsSSS/SS/SSsHH......",
+        ".......HHsSSSSSSSSSsHH......",
+        "........ssSSSSSSSSsss.......",
+        "..........SSSSSSSSS.........",
+        "..........SSSSSSSSS.........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJJcJJJJcJJJ.......",
+        "......JJJJJJcNNNNcJJJJ......",
+        "......JJJJJJcNNNNcJJJJ......",
+        ".....JJJJJJJcNNNNcJJJJJ.....",
+        "....KJJJJJJJcNNNNcJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        ".....PPPPPP.....PPPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....PPPPP.......PPPPP......",
+        ".....BBBB........PPPPP......",
+        ".....BBBB........BBBB.......",
+        ".....BBBB........BBBB.......",
+        ".................BBBB.......",
+        ".................BBBB.......",
+        ".................bbb........",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     run2_right: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        ".......HHHHHHHHHH.......","......HHHHHHHHHHH.......",
-        "......HHHssssssHH.......","......HHsSSSSSsH........",
-        "......HHsS@SSSss........","......HHsSSSSSs.........",
-        ".......HSsssssS.........",".......SSS/SSS..........",
-        "........SSSSSS..........","........SSSSSS..........",
-        ".......JJJJJJJJ.........","......JJJJJJJJJJ........",
-        ".....JJJJcNNNcJJJ.......","....JJJJJcNNNcJJJJ......",
-        "....JJJJJcNNNcJJJJ......","...KJJJJJcNNNcJJJJK.....",
-        "...KJJJJJJJJJJJJJJK.....","....JJJJJJJJJJJJJJ......",
-        ".....JJJJJJJJJJJJ.......",".....PPPPPPPPPPP........",
-        ".....PPPPPPPPPPP........","......PPPPPPPPPP........",
-        "......PPPPP.PPPP........","......PPPP...PPP........",
-        "......PPPP...BBB........","......BBBB...BBB........",
-        "......BBBB..............",".......BBB..............",
-        "........................","........................",
+        ".........HHHHHHHHHHH........",
+        "........HHHHHHHHHHHHHH......",
+        ".......HHHHHHHHHHHHHHHH.....",
+        "......HHHHHHHHHHHHHHHHHH....",
+        "......HHHHsssssssssHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsS@SSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        ".....HHHHsSSSSSSSSsHHHH.....",
+        "......HHHsSSS/SS/SSsHH......",
+        ".......HHsSSSSSSSSSsHH......",
+        "........ssSSSSSSSSsss.......",
+        "..........SSSSSSSSS.........",
+        "..........SSSSSSSSS.........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJJcJJJJcJJJ.......",
+        "......JJJJJJcNNNNcJJJJ......",
+        "......JJJJJJcNNNNcJJJJ......",
+        ".....JJJJJJJcNNNNcJJJJJ.....",
+        "....KJJJJJJJcNNNNcJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        "......PPPPPPPPPPPPPPPP......",
+        ".....PPPPPPPPPPPPPPPPPP.....",
+        "......PPPPPP.....PPPPPP.....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......PPPPP....",
+        ".......PPPPP.......BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB........BBBB.....",
+        ".......BBBB.................",
+        ".......BBBB.................",
+        "........bbb.................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     shoot: [
-        "........HHHHHHHH........",".......HHHHHHHHHH.......",
-        "......HHHHHHHHHHHH......","......HHssssssssHH......",
-        "......HssSSSSSSssH......","......HsS@SSSS@SsH......",
-        "......HsSSSSSSSSsH......",".......SSSSSSSSSS.......",
-        ".......SSS/SS/SSS.......","........SSSSSSSS........",
-        "........SSSSSSSS........",".......JJJJJJJJJJ.......",
-        "......JJccJJJJccJJ......",".....JJJJcNNNNcJJJJ.....",
-        ".....JJJJcNNNNcJJJJ.....","....JJJJJcNNNNcJJJJJ....",
-        "....JJJJJcNNNNcJJJJJ....","...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "....JJJJJJJJJJJJJJJJ....","....JJJJJJJJJJJJJJJJ....",
-        ".....JJJJJJJJJJJJJJ.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPP..PPPPPP.......",
-        ".....PPPP..PPPPPP.......",".....BBBB..BBBBBB.......",
-        ".....BBBB..BBBBBB.......","........................",
+        ".........HHHHHHHHHH.........",
+        "........HHHHHHHHHHHH........",
+        ".......HHHHHHHHHHHHHH.......",
+        "......HHHHHHHHHHHHHHHH......",
+        "......HHHsssssssssssHH......",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsS@SSSSSS@SsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        ".....HHHsSSSSSSSSSSsHHH.....",
+        "......HHsSSS/SS/SSSsHH......",
+        ".......HssSSSSSSSSssH.......",
+        "........ssSSSSSSSSss........",
+        "..........SSSSSSSS..........",
+        "..........SSSSSSSS..........",
+        "........JJJJJJJJJJJJ........",
+        ".......JJJJcJJJJcJJJJ.......",
+        "......JJJJJcNNNNcJJJJJ......",
+        "......JJJJJcNNNNcJJJJJ......",
+        ".....JJJJJJcNNNNcJJJJJJ.....",
+        "....KJJJJJJcNNNNcJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        "....KJJJJJJJJJJJJJJJJJJK....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        ".....JJJJJJJJJJJJJJJJJJ.....",
+        "......JJJJJJJJJJJJJJJJ......",
+        ".......JJJJJJJJJJJJJJ.......",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPPPPPPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........PPPP..PPPPPP........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        "........BBBB..BBBBBB........",
+        ".........bbb..bbbbb.........",
     ],
     celebrate: [
-        "..SS....HHHHHHHH....SS..","..SS...HHHHHHHHHH...SS..",
-        "..SS...HHHHHHHHHH...SS..","..SS...HHHHHHHHHH...SS..",
-        "..SS...HHssssssssHH.SS..","..SS...HssSSSSSSssH.SS..",
-        "..SS...HsS@SSSS@SsH.SS..","..SS...HsSSSSSSSSsH.SS..",
-        "..SS....SSSSSSSSSS..SS..","..SS....SSS/SS/SSS..SS..",
-        "...S....SSSSSSSS....S...","........SSSSSSSS........",
-        ".......JJJJJJJJJJ.......","......JJccJJJJccJJ......",
-        ".....JJJJcNNNNcJJJJ.....",".....JJJJcNNNNcJJJJ.....",
-        "....JJJJJcNNNNcJJJJJ....","....JJJJJcNNNNcJJJJJ....",
-        "...KJJJJJJJJJJJJJJJJK...","...KJJJJJJJJJJJJJJJJK...",
-        "...KJJJJJJJJJJJJJJJJK...","....JJJJJJJJJJJJJJJJ....",
-        "....JJJJJJJJJJJJJJJJ....",".....JJJJJJJJJJJJJJ.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPPPPPPPPPPPP.....",".....PPPPPPPPPPPPPP.....",
-        ".....PPPP..PPPPPP.......",".....PPPP..PPPPPP.......",
-        ".....BBBB..BBBBBB.......",".....BBBB..BBBBBB.......",
+        "..SS....HHHHHHHHHH....SS...",
+        "..SS...HHHHHHHHHHHH...SS...",
+        "..SS...HHHHHHHHHHHH...SS...",
+        "..SS..HHHHHHHHHHHHHH..SS...",
+        "..SS..HHHssssssssssHH.SS...",
+        "..SS.HHHsSSSSSSSSsHHH.SS...",
+        "..SS.HHHsS@SSSSSS@SsH.SS...",
+        "..SS.HHHsSSSSSSSSSsH.SS....",
+        "..SS..HHsSSS/SS/SSSs.SS....",
+        "...S...HssSSSSSSSSs..S.....",
+        "........ssSSSSSSSSss.......",
+        "..........SSSSSSSS.........",
+        "..........SSSSSSSS.........",
+        "........JJJJJJJJJJJJ.......",
+        ".......JJJJcJJJJcJJJJ......",
+        "......JJJJJcNNNNcJJJJJ.....",
+        "......JJJJJcNNNNcJJJJJ.....",
+        ".....JJJJJJcNNNNcJJJJJJ....",
+        "....KJJJJJJcNNNNcJJJJJJK...",
+        "....KJJJJJJJJJJJJJJJJJJK...",
+        "....KJJJJJJJJJJJJJJJJJJK...",
+        "....KJJJJJJJJJJJJJJJJJJK...",
+        ".....JJJJJJJJJJJJJJJJJJ....",
+        ".....JJJJJJJJJJJJJJJJJJ....",
+        "......JJJJJJJJJJJJJJJJ.....",
+        ".......JJJJJJJJJJJJJJ......",
+        "........PPPPPPPPPPPP.......",
+        "........PPPPPPPPPPPP.......",
+        "........PPPPPPPPPPPP.......",
+        "........PPPPPPPPPPPP.......",
+        "........PPPPPPPPPPPP.......",
+        "........PPPP..PPPPPP.......",
+        "........PPPP..PPPPPP.......",
+        "........PPPP..PPPPPP.......",
+        "........PPPP..PPPPPP.......",
+        "........BBBB..BBBBBB.......",
+        "........BBBB..BBBBBB.......",
+        "........BBBB..BBBBBB.......",
+        ".........bbb..bbbbb........",
     ],
     tackle: [
-        "........................","........................",
-        "........................","........................",
-        "........................","........................",
-        "................HHHHHHHH","...............HHHHHHHHH",
-        "..............HHHHHHHHHH","..............HHsssssssH",
-        "..............HssSSSSssH","..............HsS@SS@SsH",
-        "...............SSSSSSSS.","...............SSS/SS/SS",
-        "................SSSSSSSS","................SSSSSSSS",
-        "......JJJJJJJJJJJJJJJJJ.",".....JJJJccJJJJccJJJJJJ.",
-        "....JJJJcNNNNNNNNcJJJJJ.","...JJJJJcNNNNNNNNcJJJJJ.",
-        "..JJJJJJcNNNNNNNNcJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
-        "...JJJJJJJJJJJJJJJJJJJJ.","....JJJJJJJJJJJJJJJJJJ..",
-        "....PPPPPPPPPPPPPPPPP...","...PPPPPPPPPPPPPPPPPPP..",
-        "..PPPPPPPPPPPPPPPPPPP...",".BBBB...............BBB.",
-        ".BBBB...............BBB.","........................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "................HHHHHHHH....",
+        "...............HHHHHHHHHH...",
+        "..............HHHHHHHHHHHH..",
+        "..............HHssssssssHH..",
+        ".............HHsSSSSSSSSsH..",
+        ".............HHsS@SSSS@SSsH.",
+        ".............HHsSSSSSSSSsH..",
+        "..............HsSS/SS/SSsH..",
+        "...............ssSSSSSSss...",
+        ".................SSSSSS.....",
+        "......JJJJJJJJJJJJJJJJJJ....",
+        ".....JJJJcJJJJcJJJJJJJJJ....",
+        "....JJJJJcNNNNcJJJJJJJJJJ...",
+        "...JJJJJJcNNNNcJJJJJJJJJJ...",
+        "..JJJJJJJcNNNNcJJJJJJJJJJJ..",
+        "..KJJJJJJJJJJJJJJJJJJJJJJJ..",
+        "..KJJJJJJJJJJJJJJJJJJJJJJJ..",
+        "...JJJJJJJJJJJJJJJJJJJJJJJ..",
+        "....JJJJJJJJJJJJJJJJJJJJJJ..",
+        "....PPPPPPPPPPPPPPPPPPPPPP..",
+        "...PPPPPPPPPPPPPPPPPPPPPPP..",
+        "..PPPPPPPPPPPPPPPPPPPPPPPPP.",
+        ".BBBB.....................BB",
+        ".BBBB.....................BB",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
     fallen: [
-        "........................","........................",
-        "........................","........................",
-        "........................","........................",
-        "........................","................HHHHHHHH",
-        "...............HHHHHHHHH","..............HHHHHHHHHH",
-        "..............HHsssssssH","..............HssSSSSssH",
-        "..............HsS@SS@SsH","...............SSSSSSSS.",
-        "...............SSS/SS/SS","................SSSSSSSS",
-        "......JJJJJJJJJJJJJJJJJ.",".....JJJJccJJJJccJJJJJJ.",
-        "....JJJJcNNNNNNNNcJJJJJ.","...JJJJJcNNNNNNNNcJJJJJ.",
-        "..JJJJJJcNNNNNNNNcJJJJJ.","..KJJJJJJJJJJJJJJJJJJJJ.",
-        "..KJJJJJJJJJJJJJJJJJJJJ.","...JJJJJJJJJJJJJJJJJJJJ.",
-        "....JJJJJJJJJJJJJJJJJJ..","....PPPPPPPPPPPPPPPPP...",
-        "...PPPPPPPPPPPPPPPPPPP..",".BBBB...............BBB.",
-        ".BBBB...............BBB.","........................",
-        "........................","........................",
-        "........................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "................HHHHHHHH....",
+        "...............HHHHHHHHHH...",
+        "..............HHHHHHHHHHHH..",
+        "..............HHssssssssHH..",
+        ".............HHsSSSSSSSSsH..",
+        ".............HHsS@SSSS@SSsH.",
+        ".............HHsSSSSSSSSsH..",
+        "..............HsSS/SS/SSsH..",
+        "...............ssSSSSSSss...",
+        ".................SSSSSS.....",
+        "......JJJJJJJJJJJJJJJJJJ....",
+        ".....JJJJcJJJJcJJJJJJJJJ....",
+        "....JJJJJcNNNNcJJJJJJJJJJ...",
+        "...JJJJJJcNNNNcJJJJJJJJJJ...",
+        "..JJJJJJJcNNNNcJJJJJJJJJJJ..",
+        "..KJJJJJJJJJJJJJJJJJJJJJJJ..",
+        "..KJJJJJJJJJJJJJJJJJJJJJJJ..",
+        "...JJJJJJJJJJJJJJJJJJJJJJJ..",
+        "....JJJJJJJJJJJJJJJJJJJJJJ..",
+        "....PPPPPPPPPPPPPPPPPPPPPP..",
+        "...PPPPPPPPPPPPPPPPPPPPPPP..",
+        ".BBBB.....................BB",
+        ".BBBB.....................BB",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
+        "............................",
     ],
 };
 
@@ -569,10 +876,10 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
     const offsetX = -w * pixelSize / 2;
     const offsetY = -h * pixelSize;
     
-    // Sombra elíptica
+    // Sombra
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath();
-    ctx.ellipse(x, y + 4, w * pixelSize * 0.45, h * pixelSize * 0.10, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 4, w * pixelSize * 0.42, h * pixelSize * 0.10, 0, 0, Math.PI * 2);
     ctx.fill();
     
     for (let row = 0; row < h; row++) {
@@ -613,7 +920,6 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
     ctx.strokeText(dorsal, x, dorsalY);
     ctx.fillText(dorsal, x, dorsalY);
     
-    // Flecha indicadora del jugador controlado
     if (isControlled) {
         const arrowY = y - h * pixelSize - 18;
         const bounce = Math.sin(animTimer * 0.15) * 3;
@@ -627,12 +933,10 @@ function drawPixelSprite(sprite, x, y, pixelSize, color1, color2, dorsal, isCont
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
         ctx.stroke();
-        
-        // Anillo bajo los pies
         ctx.strokeStyle = '#00ffc8';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(x, y + 2, w * pixelSize * 0.55, h * pixelSize * 0.11, 0, 0, Math.PI * 2);
+        ctx.ellipse(x, y + 2, w * pixelSize * 0.5, h * pixelSize * 0.10, 0, 0, Math.PI * 2);
         ctx.stroke();
     }
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
@@ -683,7 +987,6 @@ function drawPolygon(cx, cy, sides, radius, rotation) {
 // =====================================================
 let netLeftOffset = 0, netLeftVelocity = 0;
 let netRightOffset = 0, netRightVelocity = 0;
-
 function kickNet(side, force) {
     if (side === 'left') netLeftVelocity = 0.9 * force;
     else netRightVelocity = 0.9 * force;
@@ -711,7 +1014,6 @@ function drawField() {
     ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy);
     ctx.closePath(); ctx.fill();
     
-    // Franjas
     const stripes = 12;
     for (let i = 0; i < stripes; i += 2) {
         const x1 = (i / stripes) * ISO.fieldW;
@@ -736,7 +1038,6 @@ function drawField() {
     }
     ctx.globalAlpha = 1;
     
-    // Líneas del campo
     const drawLine = (x1, y1, x2, y2) => {
         const p1 = toScreen(x1, y1), p2 = toScreen(x2, y2);
         ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.stroke();
@@ -755,8 +1056,7 @@ function drawField() {
         ctx.stroke();
     };
     
-    ctx.strokeStyle = c.line;
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = c.line; ctx.lineWidth = 2;
     drawRect(0, 0, ISO.fieldW, ISO.fieldH);
     drawLine(ISO.centerX, 0, ISO.centerX, ISO.fieldH);
     drawCircle(ISO.centerX, ISO.centerY, 100);
@@ -764,26 +1064,23 @@ function drawField() {
     drawRect(ISO.fieldW - 160, ISO.centerY - 200, 160, 400);
     drawRect(0, ISO.centerY - 90, 60, 180);
     drawRect(ISO.fieldW - 60, ISO.centerY - 90, 60, 180);
+    
     const pen1 = toScreen(120, ISO.centerY), pen2 = toScreen(ISO.fieldW - 120, ISO.centerY);
     ctx.fillStyle = c.line;
     ctx.beginPath(); ctx.arc(pen1.sx, pen1.sy, 3, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(pen2.sx, pen2.sy, 3, 0, Math.PI*2); ctx.fill();
     
-    // Porterías
+    // Portería IZQUIERDA
     const GOAL_H = 100, GOAL_DEPTH = 45;
-    
-    // IZQUIERDA
     const gTL = toScreen(-GOAL_DEPTH - netLeftOffset * 30, ISO.centerY - GOAL_H);
     const gBL = toScreen(-GOAL_DEPTH - netLeftOffset * 30, ISO.centerY + GOAL_H);
     const gFR = toScreen(0, ISO.centerY - GOAL_H);
     const gFR2 = toScreen(0, ISO.centerY + GOAL_H);
-    
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
     ctx.moveTo(gFR.sx, gFR.sy); ctx.lineTo(gFR2.sx, gFR2.sy);
     ctx.lineTo(gBL.sx, gBL.sy); ctx.lineTo(gTL.sx, gTL.sy);
     ctx.closePath(); ctx.fill();
-    
     ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
         const t = i / 8;
@@ -801,25 +1098,22 @@ function drawField() {
         const y2 = gFR2.sy + (gBL.sy - gFR2.sy) * t;
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
-    
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(gFR.sx, gFR.sy); ctx.lineTo(gTL.sx, gTL.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gFR2.sx, gFR2.sy); ctx.lineTo(gBL.sx, gBL.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gTL.sx, gTL.sy); ctx.lineTo(gBL.sx, gBL.sy); ctx.stroke();
     ctx.lineCap = 'butt';
     
-    // DERECHA
+    // Portería DERECHA
     const gTR = toScreen(ISO.fieldW + GOAL_DEPTH + netRightOffset * 30, ISO.centerY - GOAL_H);
     const gBR = toScreen(ISO.fieldW + GOAL_DEPTH + netRightOffset * 30, ISO.centerY + GOAL_H);
     const gFL = toScreen(ISO.fieldW, ISO.centerY - GOAL_H);
     const gFL2 = toScreen(ISO.fieldW, ISO.centerY + GOAL_H);
-    
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
     ctx.moveTo(gFL.sx, gFL.sy); ctx.lineTo(gFL2.sx, gFL2.sy);
     ctx.lineTo(gBR.sx, gBR.sy); ctx.lineTo(gTR.sx, gTR.sy);
     ctx.closePath(); ctx.fill();
-    
     ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
         const t = i / 8;
@@ -837,7 +1131,6 @@ function drawField() {
         const y2 = gFL2.sy + (gBR.sy - gFL2.sy) * t;
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
-    
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(gFL.sx, gFL.sy); ctx.lineTo(gTR.sx, gTR.sy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gFL2.sx, gFL2.sy); ctx.lineTo(gBR.sx, gBR.sy); ctx.stroke();
@@ -846,34 +1139,127 @@ function drawField() {
 }
 
 // =====================================================
-// PÚBLICO
+// GRADAS DIAGONALES CON CARTELES
 // =====================================================
 function drawCrowd() {
     const gradFull = ctx.createLinearGradient(0, 0, 0, H);
-    gradFull.addColorStop(0, '#1a3a1a'); gradFull.addColorStop(0.15, '#0d1f0d');
-    gradFull.addColorStop(0.85, '#0d1f0d'); gradFull.addColorStop(1, '#1a3a1a');
+    gradFull.addColorStop(0, '#0a1a0a');
+    gradFull.addColorStop(0.5, '#0d1f0d');
+    gradFull.addColorStop(1, '#0a1a0a');
     ctx.fillStyle = gradFull;
     ctx.fillRect(0, 0, W, H);
     
-    const colores = ['#e8b890', '#c84040', '#4060c8', '#f0d040', '#40a040', '#e060a0'];
-    for (let y = 4; y < 95; y += 6) {
-        for (let x = 2; x < W - 2; x += 6) {
-            const idx = Math.floor((x * 7 + y * 13) % 6);
+    const topLeft = toScreen(0, 0);
+    const topRight = toScreen(ISO.fieldW, 0);
+    const botLeft = toScreen(0, ISO.fieldH);
+    const botRight = toScreen(ISO.fieldW, ISO.fieldH);
+    
+    const colores = ['#e8b890', '#c84040', '#4060c8', '#f0d040', '#40a040', '#e060a0', '#a058c8', '#58c8c8'];
+    const gradaH = 120;
+    
+    const dirX = topRight.sx - topLeft.sx;
+    const dirY = topRight.sy - topLeft.sy;
+    const len = Math.hypot(dirX, dirY);
+    const nx = dirX / len;
+    const ny = dirY / len;
+    const perpX = -ny;
+    const perpY = nx;
+    
+    const gA = { x: topLeft.sx, y: topLeft.sy };
+    const gB = { x: topRight.sx, y: topRight.sy };
+    const gC = { x: topRight.sx + perpX * gradaH, y: topRight.sy + perpY * gradaH };
+    const gD = { x: topLeft.sx + perpX * gradaH, y: topLeft.sy + perpY * gradaH };
+    
+    ctx.fillStyle = '#0f0f1a';
+    ctx.beginPath();
+    ctx.moveTo(gA.x, gA.y); ctx.lineTo(gB.x, gB.y);
+    ctx.lineTo(gC.x, gC.y); ctx.lineTo(gD.x, gD.y);
+    ctx.closePath(); ctx.fill();
+    
+    const filas = 14, asientosPorFila = 60;
+    for (let fila = 0; fila < filas; fila++) {
+        const t = (fila + 1) / (filas + 1);
+        for (let asiento = 0; asiento < asientosPorFila; asiento++) {
+            const s = asiento / (asientosPorFila - 1);
+            const baseX = topLeft.sx + (topRight.sx - topLeft.sx) * s;
+            const baseY = topLeft.sy + (topRight.sy - topLeft.sy) * s;
+            const px = baseX + perpX * (t * gradaH);
+            const py = baseY + perpY * (t * gradaH);
+            const idx = (fila * 7 + asiento * 13) % colores.length;
+            const tam = 3 + t * 2;
             ctx.fillStyle = colores[idx];
-            ctx.fillRect(x, y + 2, 4, 4);
+            ctx.fillRect(px, py, tam, tam);
             ctx.fillStyle = '#e8b890';
-            ctx.fillRect(x + 1, y, 2, 2);
+            ctx.fillRect(px + 0.5, py - 1, tam - 1, tam - 1);
         }
     }
+    
+    // Cartel publicitario pegado al borde del campo
+    const cartelH = 22;
+    const cA = { x: topLeft.sx, y: topLeft.sy };
+    const cB = { x: topRight.sx, y: topRight.sy };
+    const cC = { x: topRight.sx + perpX * cartelH, y: topRight.sy + perpY * cartelH };
+    const cD = { x: topLeft.sx + perpX * cartelH, y: topLeft.sy + perpY * cartelH };
+    
     ctx.fillStyle = '#0a0e14';
-    ctx.fillRect(0, 95, W, 14);
+    ctx.beginPath();
+    ctx.moveTo(cA.x, cA.y); ctx.lineTo(cB.x, cB.y);
+    ctx.lineTo(cC.x, cC.y); ctx.lineTo(cD.x, cD.y);
+    ctx.closePath(); ctx.fill();
+    
+    ctx.strokeStyle = '#00d4a8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cC.x, cC.y); ctx.lineTo(cD.x, cD.y);
+    ctx.stroke();
+    
     ctx.fillStyle = '#00d4a8';
-    ctx.font = 'bold 10px Courier New';
+    ctx.font = 'bold 12px Courier New';
     ctx.textAlign = 'center';
-    for (let i = 0; i < 8; i++) {
-        ctx.fillText('· RETRO FOOTBALL 96 ·', W/2 + (i - 3.5) * 140, 105);
+    ctx.textBaseline = 'middle';
+    const textos = ['· FIFA TOTAL ·', '· RETRO LIGA ·', '· SOUNDSNIP ·', '· FIFA TOTAL ·', '· RETRO FOOTBALL 96 ·', '· LIGA PRO ·'];
+    for (let i = 0; i < 12; i++) {
+        const s = (i + 0.5) / 12;
+        const baseX = topLeft.sx + (topRight.sx - topLeft.sx) * s;
+        const baseY = topLeft.sy + (topRight.sy - topLeft.sy) * s;
+        const cx = baseX + perpX * (cartelH / 2);
+        const cy = baseY + perpY * (cartelH / 2);
+        ctx.fillText(textos[i % textos.length], cx, cy);
     }
     ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    
+    // Grada inferior
+    const gradaInfH = 80;
+    const perpX2 = ny;
+    const perpY2 = -nx;
+    const bA = { x: botLeft.sx, y: botLeft.sy };
+    const bB = { x: botRight.sx, y: botRight.sy };
+    const bC = { x: botRight.sx + perpX2 * gradaInfH, y: botRight.sy + perpY2 * gradaInfH };
+    const bD = { x: botLeft.sx + perpX2 * gradaInfH, y: botLeft.sy + perpY2 * gradaInfH };
+    
+    ctx.fillStyle = '#0f0f1a';
+    ctx.beginPath();
+    ctx.moveTo(bA.x, bA.y); ctx.lineTo(bB.x, bB.y);
+    ctx.lineTo(bC.x, bC.y); ctx.lineTo(bD.x, bD.y);
+    ctx.closePath(); ctx.fill();
+    
+    for (let fila = 0; fila < 8; fila++) {
+        const t = (fila + 1) / 9;
+        for (let asiento = 0; asiento < 60; asiento++) {
+            const s = asiento / 59;
+            const baseX = botLeft.sx + (botRight.sx - botLeft.sx) * s;
+            const baseY = botLeft.sy + (botRight.sy - botLeft.sy) * s;
+            const px = baseX + perpX2 * (t * gradaInfH);
+            const py = baseY + perpY2 * (t * gradaInfH);
+            const idx = (fila * 11 + asiento * 5 + 3) % colores.length;
+            const tam = 3 + t * 2;
+            ctx.fillStyle = colores[idx];
+            ctx.fillRect(px, py, tam, tam);
+            ctx.fillStyle = '#e8b890';
+            ctx.fillRect(px + 0.5, py - 1, tam - 1, tam - 1);
+        }
+    }
 }
 
 // =====================================================
@@ -957,7 +1343,6 @@ let freezeTimer = 0;
 let lastBallToucher = null;
 let controlledIndex = 0;
 const cards = {};
-const particles = [];
 const skillParticles = [];
 
 const you = { players: [] };
@@ -990,9 +1375,6 @@ CFG.formRiv.forEach(([fx, fy], i) => {
 
 const ball = { x: FIELD.w/2, y: FIELD.h/2, vx: 0, vy: 0 };
 
-// =====================================================
-// INPUT (con cambio de jugador)
-// =====================================================
 const KEYMAP = {
     'w': 'up', 'arrowup': 'up',
     's': 'down', 'arrowdown': 'down',
@@ -1002,7 +1384,6 @@ const KEYMAP = {
     'e': 'shoot',
     'tab': 'switch', 'c': 'switch',
 };
-
 function handleKey(e, isDown) {
     const raw = e.key.toLowerCase();
     const action = KEYMAP[raw];
@@ -1012,7 +1393,6 @@ function handleKey(e, isDown) {
     if (isDown && action === 'switch' && gameState === "play") switchToNextPlayer();
     if (isDown && action === 'dribble' && dribbleCooldown <= 0 && gameState === "play") attemptDribble();
 }
-
 window.addEventListener('keydown', e => handleKey(e, true), true);
 window.addEventListener('keyup', e => handleKey(e, false), true);
 document.addEventListener('keydown', e => handleKey(e, true), true);
@@ -1023,9 +1403,6 @@ window.addEventListener('click', () => canvas.focus());
 canvas.focus();
 setTimeout(() => canvas.focus(), 500);
 
-// =====================================================
-// CAMBIO DE JUGADOR
-// =====================================================
 function setControlledIndex(newIndex) {
     you.players.forEach((p, i) => { p.isControlled = (i === newIndex); });
     controlledIndex = newIndex;
@@ -1063,7 +1440,6 @@ function updatePlayer(p, dx, dy, baseSpeed) {
     const boost = 0.7 + (p.vel / 100) * 0.6;
     const speed = baseSpeed * boost;
     const len = Math.hypot(dx, dy);
-    
     if (len > 0) {
         const tvx = (dx / len) * speed;
         const tvy = (dy / len) * speed;
@@ -1085,9 +1461,7 @@ function showBigAlert(text, color) {
     setTimeout(() => a.style.opacity = '0', 1200);
 }
 
-// =====================================================
-// REGATES (6 tipos)
-// =====================================================
+// ========== REGATES ==========
 function attemptDribble() {
     const p = you.players[controlledIndex];
     if (!p) return;
@@ -1098,11 +1472,7 @@ function attemptDribble() {
         const d = dist(p, r);
         if (d < nd) { nd = d; nearest = r; }
     }
-    if (!nearest || nd > 80) {
-        p.vx *= 1.6; p.vy *= 1.6;
-        showBigAlert("💨 SPRINT", "#00ffc8");
-        return;
-    }
+    if (!nearest || nd > 80) { p.vx *= 1.6; p.vy *= 1.6; showBigAlert("💨 SPRINT", "#00ffc8"); return; }
     const inBox = p.x > FIELD.w - 250 || p.x < 250;
     const isGood = p.reg >= 80;
     const isElite = p.reg >= 88;
@@ -1126,7 +1496,6 @@ function executeSkill(p, defender, skill, success) {
     if (skill === 'ruleta') exitAngle = angle + (Math.random() < 0.5 ? Math.PI/2 : -Math.PI/2);
     else if (skill === 'elastica') exitAngle = angle + (Math.random() < 0.5 ? Math.PI*0.75 : -Math.PI*0.75);
     else if (skill === 'bicicleta') exitAngle = angle + (Math.random() - 0.5) * 0.8;
-    
     if (success) {
         const power = { 'bicicleta': 40, 'ruleta': 55, 'sombrero': 60, 'cano': 65, 'rabona': 75, 'elastica': 80 }[skill] || 50;
         p.x += Math.cos(exitAngle) * power;
@@ -1145,11 +1514,7 @@ function executeSkill(p, defender, skill, success) {
         const scr = toScreen(p.x, p.y);
         for (let i = 0; i < 15; i++) {
             const a = (i / 15) * Math.PI * 2;
-            skillParticles.push({
-                x: scr.sx, y: scr.sy,
-                vx: Math.cos(a) * 3, vy: Math.sin(a) * 3,
-                life: 30, maxLife: 30, color: info.color, size: 3,
-            });
+            skillParticles.push({ x: scr.sx, y: scr.sy, vx: Math.cos(a)*3, vy: Math.sin(a)*3, life: 30, maxLife: 30, color: info.color, size: 3 });
         }
     } else {
         p.vx *= 0.2; p.vy *= 0.2;
@@ -1178,9 +1543,7 @@ function drawSkillParticles() {
     ctx.globalAlpha = 1;
 }
 
-// =====================================================
-// FALTAS / TACKLES
-// =====================================================
+// ========== TACKLES ==========
 function attemptTackle(defender, attacker) {
     if (defender.state === 'tackle' || defender.state === 'fallen') return false;
     if (defender.tackleCooldown > 0) return false;
@@ -1206,28 +1569,88 @@ function attemptTackle(defender, attacker) {
     }
 }
 
+// ========== FUERA DE BANDA Y CÓRNER ==========
 function checkOutOfBounds() {
     if (ball.y - BR < 0 || ball.y + BR > FIELD.h) {
-        const y = ball.y < FIELD.h/2 ? BR + 10 : FIELD.h - BR - 10;
-        ball.y = y; ball.x = Math.max(50, Math.min(FIELD.w - 50, ball.x));
+        const isTop = ball.y < FIELD.h/2;
+        const outY = isTop ? BR + 5 : FIELD.h - BR - 5;
+        const outX = Math.max(80, Math.min(FIELD.w - 80, ball.x));
+        const thrower = (lastBallToucher && lastBallToucher.side === 'you') ? 'rival' : 'you';
+        ball.x = outX; ball.y = outY;
         ball.vx = 0; ball.vy = 0;
-        gameState = "throwin"; freezeTimer = 60;
-        showBigAlert("SAQUE DE BANDA", "#00d4a8"); playWhistle();
+        gameState = "throwin"; freezeTimer = 90;
+        showBigAlert(`SAQUE DE BANDA ${thrower === 'you' ? '(TÚ)' : '(RIVAL)'}`, "#00d4a8");
+        playWhistle();
+        const throwTeam = thrower === 'you' ? you.players : rival.players;
+        let closest = null, closestDist = 999;
+        for (const p of throwTeam) {
+            if (p.x < 0) continue;
+            const d = Math.hypot(p.x - outX, p.y - outY);
+            if (d < closestDist) { closestDist = d; closest = p; }
+        }
+        if (closest) {
+            closest.x = outX + (thrower === 'you' ? -30 : 30);
+            closest.y = outY;
+            if (thrower === 'you') {
+                const idx = you.players.indexOf(closest);
+                if (idx >= 0) setControlledIndex(idx);
+            }
+        }
         return true;
     }
     if (ball.x - BR < 0 || ball.x + BR > FIELD.w) {
         const gTop = FIELD.h/2 - 100, gBot = FIELD.h/2 + 100;
-        if (ball.y > gTop && ball.y < gBot) return false;
+        const isGoalArea = ball.y > gTop && ball.y < gBot;
+        if (isGoalArea) return false;
         const isLeft = ball.x < FIELD.w/2;
-        const cornerY = ball.y < FIELD.h/2 ? 15 : FIELD.h - 15;
-        ball.x = isLeft ? 15 : FIELD.w - 15;
-        ball.y = cornerY;
-        ball.vx = 0; ball.vy = 0;
-        gameState = "corner"; freezeTimer = 60;
-        showBigAlert("CÓRNER", "#ffdd00"); playWhistle();
+        const isOffensiveCorner = (isLeft && lastBallToucher && lastBallToucher.side === 'rival') ||
+                                   (!isLeft && lastBallToucher && lastBallToucher.side === 'you');
+        if (isOffensiveCorner) {
+            const cornerY = ball.y < FIELD.h/2 ? 20 : FIELD.h - 20;
+            ball.x = isLeft ? 20 : FIELD.w - 20;
+            ball.y = cornerY;
+            ball.vx = 0; ball.vy = 0;
+            gameState = "corner"; freezeTimer = 90;
+            showBigAlert("CÓRNER", "#ffdd00");
+            playWhistle();
+        } else {
+            ball.x = isLeft ? 100 : FIELD.w - 100;
+            ball.y = FIELD.h/2;
+            ball.vx = 0; ball.vy = 0;
+            gameState = "goalkick"; freezeTimer = 90;
+            showBigAlert("SAQUE DE PUERTA", "#a58cff");
+            playWhistle();
+        }
         return true;
     }
     return false;
+}
+
+function checkOffside() {
+    if (!lastBallToucher || lastBallToucher.side !== 'you') return;
+    if (Math.hypot(ball.vx, ball.vy) < 6) return;
+    let receiver = null, minD = 999;
+    for (const p of you.players) {
+        if (p === lastBallToucher) continue;
+        if (p.x < 0) continue;
+        const d = dist(p, ball);
+        if (d < 100 && d < minD) { minD = d; receiver = p; }
+    }
+    if (!receiver) return;
+    let lastDefenderX = 0;
+    for (let i = 1; i < rival.players.length; i++) {
+        const r = rival.players[i];
+        if (r.x < 0) continue;
+        if (r.x > lastDefenderX) lastDefenderX = r.x;
+    }
+    if (rival.players[0].x > lastDefenderX) lastDefenderX = rival.players[0].x;
+    if (receiver.x > lastDefenderX + 20 && receiver.x > FIELD.w / 2) {
+        playWhistle();
+        showBigAlert("FUERA DE JUEGO", "#ff3b5c");
+        gameState = "offside"; freezeTimer = 90;
+        ball.x = receiver.x; ball.y = receiver.y;
+        ball.vx = 0; ball.vy = 0;
+    }
 }
 
 function rivalTackleCheck() {
@@ -1245,38 +1668,27 @@ function rivalTackleCheck() {
     }
 }
 
-// =====================================================
-// UPDATE CONTROLADO (jugador seleccionado)
-// =====================================================
 function updateControlled() {
     if (gameState !== "play") return;
     const p = you.players[controlledIndex];
     if (!p) return;
     if (p.state === 'fallen' || p.state === 'tackle') return;
-    
     let dx = 0, dy = 0;
     if (keys['up']) dy -= 1;
     if (keys['down']) dy += 1;
     if (keys['left']) dx -= 1;
     if (keys['right']) dx += 1;
     updatePlayer(p, dx, dy, 5.5);
-    
-    // TIRO
     if (keys['shoot'] && dist(p, ball) < PR + BR + 12) {
         const dirX = p.facing === 'right' ? 1 : p.facing === 'left' ? -1 : 0;
         const dirY = p.facing === 'down' ? 1 : p.facing === 'up' ? -1 : 0;
-        const targetX = FIELD.w;
-        const targetY = FIELD.h/2;
-        const angle = (dirX === 0 && dirY === 0)
-            ? Math.atan2(targetY - ball.y, targetX - ball.x)
-            : Math.atan2(dirY, dirX);
+        const targetX = FIELD.w, targetY = FIELD.h/2;
+        const angle = (dirX === 0 && dirY === 0) ? Math.atan2(targetY - ball.y, targetX - ball.x) : Math.atan2(dirY, dirX);
         ball.vx = Math.cos(angle) * 22; ball.vy = Math.sin(angle) * 22;
         keys['shoot'] = false;
         p.state = 'shoot'; p.stateTimer = 15;
         lastBallToucher = p; playKick();
     }
-    
-    // PASE
     if (keys['action'] && dist(p, ball) < PR + BR + 12) {
         let best = null, bestScore = -Infinity;
         for (let i = 1; i < you.players.length; i++) {
@@ -1301,9 +1713,6 @@ function updateControlled() {
     }
 }
 
-// =====================================================
-// IA RIVAL
-// =====================================================
 function updateRival() {
     if (gameState !== "play") return;
     const owner = findBallOwner();
@@ -1312,24 +1721,42 @@ function updateRival() {
         const p = rival.players[i];
         if (p.state === 'fallen' || p.state === 'tackle') continue;
         if (p.x < 0) continue;
-        let target;
+        let target, speedMult = 1.0;
         if (weAttack) {
-            if (i === 0) target = { x: FIELD.w - 40, y: Math.max(FIELD.h/2 - 100, Math.min(FIELD.h/2 + 100, ball.y)) };
-            else if (i <= 4) target = { x: Math.max(FIELD.w * 0.55, Math.min(FIELD.w - 100, ball.x + 200)), y: FIELD.h/2 + (i - 2.5) * 100 };
-            else if (i <= 7) target = { x: FIELD.w * 0.55 + (i - 6) * 80, y: ball.y * 0.4 + FIELD.h/2 * 0.6 };
-            else target = { x: Math.min(FIELD.w - 150, ball.x + 300), y: FIELD.h/2 + (i - 9) * 150 };
+            const ballNearby = Math.abs(ball.x - p.x) < 400 && Math.abs(ball.y - p.y) < 300;
+            if (i === 0) {
+                target = { x: FIELD.w - 40, y: Math.max(FIELD.h/2 - 120, Math.min(FIELD.h/2 + 120, ball.y)) };
+                speedMult = 0.6;
+            } else if (i <= 4) {
+                if (ballNearby && owner && owner.side === 'you') {
+                    const dToCarrier = dist(p, owner);
+                    if (dToCarrier < 250) { target = { x: owner.x, y: owner.y }; speedMult = 1.0; }
+                    else { target = { x: ball.x + 100, y: ball.y }; speedMult = 0.9; }
+                } else {
+                    target = { x: Math.max(FIELD.w * 0.55, ball.x + 150), y: FIELD.h/2 + (i - 2.5) * 100 };
+                    speedMult = 0.8;
+                }
+            } else if (i <= 7) {
+                const dToBall = dist(p, ball);
+                if (dToBall < 250) { target = { x: ball.x, y: ball.y }; speedMult = 1.0; }
+                else { target = { x: (ball.x + FIELD.w) / 2, y: ball.y * 0.6 + FIELD.h/2 * 0.4 }; speedMult = 0.85; }
+            } else {
+                const dToBall = dist(p, ball);
+                if (dToBall < 350) { target = { x: ball.x, y: ball.y }; speedMult = 0.95; }
+                else { target = { x: Math.min(FIELD.w - 150, ball.x + 200), y: FIELD.h/2 + (i - 9) * 100 }; speedMult = 0.75; }
+            }
         } else {
             const carrier = owner;
-            if (i === 0) target = { x: FIELD.w - 40, y: FIELD.h/2 };
-            else if (i <= 4) target = { x: FIELD.w * 0.55, y: FIELD.h/2 + (i - 2.5) * 100 };
-            else if (i <= 7) target = { x: carrier.x + (i - 6) * 100, y: carrier.y + (i % 2 === 0 ? 120 : -120) };
-            else target = { x: Math.min(FIELD.w - 150, carrier.x + 350), y: FIELD.h/2 + (i - 9) * 150 };
+            if (i === 0) { target = { x: FIELD.w - 40, y: FIELD.h/2 }; speedMult = 0.5; }
+            else if (i <= 4) { target = { x: FIELD.w * 0.6, y: FIELD.h/2 + (i - 2.5) * 100 }; speedMult = 0.7; }
+            else if (i <= 7) { target = { x: carrier.x + (i - 6) * 100, y: carrier.y + (i % 2 === 0 ? 130 : -130) }; speedMult = 0.9; }
+            else { target = { x: Math.min(FIELD.w - 100, carrier.x + 350 + (i - 9) * 50), y: FIELD.h/2 + (i - 9) * 130 }; speedMult = 1.0; }
         }
         const dx = target.x - p.x, dy = target.y - p.y;
         const d = Math.hypot(dx, dy) || 1;
-        let speed = i === 0 ? CFG.difSpeed * 0.5 : (i <= 4 ? CFG.difSpeed * 0.85 : (i <= 7 ? CFG.difSpeed * 0.95 : CFG.difSpeed));
-        if (d > 4) updatePlayer(p, dx/d, dy/d, speed * 1.8);
-        else { p.vx *= 0.85; p.vy *= 0.85; }
+        const baseSpeed = i === 0 ? CFG.difSpeed * 0.5 : (i <= 4 ? CFG.difSpeed * 0.85 : (i <= 7 ? CFG.difSpeed * 0.95 : CFG.difSpeed));
+        if (d > 4) updatePlayer(p, dx/d, dy/d, baseSpeed * 1.8 * speedMult);
+        else { p.vx *= 0.9; p.vy *= 0.9; }
     }
 }
 
@@ -1344,16 +1771,11 @@ function findBallOwner() {
     return owner;
 }
 
-// =====================================================
-// BALÓN (con pegado al jugador)
-// =====================================================
 function updateBall() {
     if (gameState !== "play") return;
     const owner = findBallOwner();
     if (owner) {
-        const angle = owner.facing === 'right' ? 0 :
-                      owner.facing === 'left' ? Math.PI :
-                      owner.facing === 'down' ? Math.PI/2 : -Math.PI/2;
+        const angle = owner.facing === 'right' ? 0 : owner.facing === 'left' ? Math.PI : owner.facing === 'down' ? Math.PI/2 : -Math.PI/2;
         const offset = PR + 6;
         const targetX = owner.x + Math.cos(angle) * offset;
         const targetY = owner.y + Math.sin(angle) * offset;
@@ -1362,10 +1784,8 @@ function updateBall() {
         ball.vx *= 0.6; ball.vy *= 0.6;
         return;
     }
-    
     ball.x += ball.vx; ball.y += ball.vy;
     ball.vx *= 0.96; ball.vy *= 0.96;
-    
     const all = [...you.players, ...rival.players];
     for (const p of all) {
         if (p.x < 0) continue;
@@ -1380,9 +1800,7 @@ function updateBall() {
             lastBallToucher = p;
         }
     }
-    
     if (checkOutOfBounds()) return;
-    
     const gTop = FIELD.h/2 - 100, gBot = FIELD.h/2 + 100;
     if (ball.x + BR > FIELD.w && ball.y > gTop && ball.y < gBot) {
         const force = Math.min(1, Math.hypot(ball.vx, ball.vy) / 15);
@@ -1422,9 +1840,6 @@ function resetPositions() {
 
 function flashMessage(text) { message = text; messageTimer = 100; }
 
-// =====================================================
-// RENDER
-// =====================================================
 function getSpriteKey(p) {
     if (p.state === 'celebrate') return 'celebrate';
     if (p.state === 'tackle') return 'tackle';
@@ -1456,7 +1871,7 @@ function drawAll() {
         const spriteKey = getSpriteKey(p);
         const sprite = SPRITES[spriteKey] || SPRITES.idle_down;
         const depthScale = 0.75 + (p.y / FIELD.h) * 0.35;
-        const pxSize = 1.35 * depthScale;
+        const pxSize = 1.15 * depthScale;
         const isYou = you.players.indexOf(p) !== -1;
         const c1 = isYou ? CFG.colorJug : CFG.colorRiv;
         const c2 = isYou ? CFG.colorJug2 : CFG.colorRiv2;
@@ -1490,13 +1905,9 @@ function drawAll() {
     }
 }
 
-// =====================================================
-// LOOP
-// =====================================================
 function loop(now) {
     const dt = Math.min(50, now - lastTime) / 1000;
     lastTime = now;
-    
     if (gameState === "play") {
         matchTime -= dt;
         if (matchTime < 0) matchTime = 0;
@@ -1512,11 +1923,10 @@ function loop(now) {
     }
     
     if (gameState === "play") {
-        // Cambio automático de jugador cuando el rival tiene el balón
         const ownerCheck = findBallOwner();
-        if (ownerCheck && ownerCheck.side === 'rival' && animTimer % 30 === 0) {
-            autoSwitchToNearestToBall();
-        }
+        if (ownerCheck && ownerCheck.side === 'rival' && animTimer % 30 === 0) autoSwitchToNearestToBall();
+        
+        if (animTimer % 18 === 0) checkOffside();
         
         updateControlled();
         updateRival();
@@ -1525,29 +1935,42 @@ function loop(now) {
         updateNets();
         updateSkillParticles();
         
-        // IA compañeros
         const owner = findBallOwner();
         const theyAttack = owner && owner.side === 'rival';
-        for (let i = 1; i < you.players.length; i++) {
+        const weAttack2 = owner && owner.side === 'you';
+        
+        for (let i = 0; i < you.players.length; i++) {
             if (i === controlledIndex) continue;
+            if (i === 0) continue;
             const mate = you.players[i];
             if (mate.x < 0) continue;
-            let target;
+            if (mate.state === 'fallen' || mate.state === 'tackle') continue;
+            let target, speedMult = 1.0;
             if (theyAttack) {
-                if (i <= 4) target = { x: FIELD.w * 0.25 + (i - 2) * 60, y: mate.homeY };
-                else if (i <= 7) target = { x: ball.x - 100, y: mate.homeY };
-                else target = { x: FIELD.w * 0.35, y: mate.homeY };
-            } else if (owner && owner.side === 'you') {
-                if (i <= 4) target = { x: mate.homeX + 120, y: mate.homeY };
-                else if (i <= 7) target = { x: ball.x + 80, y: ball.y + (i % 2 === 0 ? 120 : -120) };
-                else target = { x: Math.min(FIELD.w - 150, ball.x + 250), y: FIELD.h/2 + (i - 9) * 150 };
+                const dToBall = dist(mate, ball);
+                if (i <= 4) {
+                    if (dToBall < 300) { target = { x: ball.x + 80, y: ball.y }; speedMult = 1.0; }
+                    else { target = { x: FIELD.w * 0.28 + (i - 2) * 60, y: mate.homeY }; speedMult = 0.9; }
+                } else if (i <= 7) {
+                    if (dToBall < 350) { target = { x: ball.x, y: ball.y }; speedMult = 1.0; }
+                    else { target = { x: ball.x - 150, y: mate.homeY }; speedMult = 0.85; }
+                } else {
+                    if (dToBall < 400) { target = { x: ball.x, y: ball.y }; speedMult = 0.95; }
+                    else { target = { x: FIELD.w * 0.35, y: mate.homeY }; speedMult = 0.75; }
+                }
+            } else if (weAttack2) {
+                if (i <= 4) { target = { x: mate.homeX + 100, y: mate.homeY }; speedMult = 0.85; }
+                else if (i <= 7) { target = { x: ball.x + 100 + (i - 6) * 60, y: ball.y + (i % 2 === 0 ? 130 : -130) }; speedMult = 0.95; }
+                else { target = { x: Math.min(FIELD.w - 150, ball.x + 250), y: FIELD.h/2 + (i - 9) * 130 }; speedMult = 1.0; }
             } else {
                 target = { x: mate.homeX, y: mate.homeY };
+                speedMult = 0.9;
             }
-            const dx = target.x - mate.x, dy = target.y - mate.y;
+            const dx = target.x - mate.x;
+            const dy = target.y - mate.y;
             const d = Math.hypot(dx, dy) || 1;
-            if (d > 10) updatePlayer(mate, dx/d, dy/d, 5.0);
-            else { mate.vx *= 0.85; mate.vy *= 0.85; }
+            if (d > 10) updatePlayer(mate, dx/d, dy/d, 5.0 * speedMult);
+            else { mate.vx *= 0.9; mate.vy *= 0.9; }
         }
     } else if (freezeTimer > 0) {
         freezeTimer--;
